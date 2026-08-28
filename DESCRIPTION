@@ -1,0 +1,34 @@
+Package: funresMech
+Title: Mechanistic Functional Response Analysis with Shiny
+Version: 1.0.0
+Authors@R: 
+    person("Segundo", "Núñez-Campero", 
+           email = "segundo.nc@conicet.gov.ar", 
+           role = c("aut", "cre"))
+Description: Implements the Okuyama mechanistic functional response model 
+    with an interactive Shiny application. Provides functions for fitting 
+    the model, generating likelihood profiles, and visualizing stochastic 
+    curves and distributions.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    shiny,
+    shinythemes,
+    shinyBS,
+    dplyr,
+    DEoptim,
+    ggplot2,
+    plotly,
+    future,
+    rmarkdown,
+    magrittr,    
+    tidyr,
+    utils,
+    stats
+Suggests:
+    knitr,
+    kableExtra,
+    testthat (>= 3.0.0)
+Config/Needs/check: r-lib/actions/dependencies
+Config/roxygen2/version: 8.1.0
