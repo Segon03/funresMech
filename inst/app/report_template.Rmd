@@ -258,7 +258,9 @@ if (!is.null(params$HIST_ALL) && "box" %in% params$REPORT_ELEMENTS) {
 if (!is.null(params$HIST_ALL) && "violin" %in% params$REPORT_ELEMENTS) {
   p_violin <- ggplot(params$HIST_ALL, aes(x = factor(dens), y = paras, fill = species)) +
     geom_violin(alpha = 0.4) +
-    geom_boxplot(width = 0.1) +
+    geom_jitter(aes(color = species),
+            position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.9),
+            alpha = 0.4, size = 1.5) +
     theme_bw() +
     labs(title = "Violin plots of simulated parasitism")
   print(p_violin)
