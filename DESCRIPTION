@@ -1,0 +1,37 @@
+Package: funresMech
+Title: Mechanistic Functional Response Analysis
+Version: 1.0.2
+Authors@R: 
+    person("Segundo", "Núñez-Campero", 
+           email = "segundo.nc@conicet.gov.ar", 
+           role = c("aut", "cre"))
+X-CRAN-Comment: Okuyama is a proper name
+Description: Implements the mechanistic functional response model proposed by 
+    Okuyama (2012) for host-parasitoid systems. Provides tools for model fitting, 
+    likelihood profiling, stochastic simulation, and visualization of parasitism 
+    distributions. Includes an interactive Shiny application for complete analysis 
+    workflows. See Okuyama (2012) <doi= 10.1016/j.biocontrol.2011.10.008>.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    DEoptim,
+    dplyr,
+    future,
+    ggplot2 (>= 3.4.0),
+    magrittr,
+    plotly,
+    rlang,
+    rmarkdown,
+    shiny,
+    shinyBS,
+    shinythemes,
+    stats,
+    tidyr,
+    utils
+Suggests:
+    knitr,
+    kableExtra,
+    testthat (>= 3.0.0)
+Config/Needs/check: r-lib/actions/dependencies
+Config/roxygen2/version: 8.1.0
