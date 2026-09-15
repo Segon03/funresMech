@@ -123,8 +123,8 @@ ui <- fluidPage(
       hr(),
 
       h4("Downloads"),
-      downloadButton("download_profile", "Download likelihood profiles"),
-      downloadButton("download_params", "Download fitted parameters"),
+      downloadButton("download_profile", "Download likelihood profiles (CSV)"),
+      downloadButton("download_params", "Download fitted parameters (CSV)"),
 
       hr(),
       h4("Report"),

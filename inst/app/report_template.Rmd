@@ -42,9 +42,11 @@ params:
 knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
 library(ggplot2)
 library(dplyr)
-library(tidyr)
 library(knitr)
-library(kableExtra)
+
+# kableExtra es un paquete en Suggests: las secciones que dependen de el
+# se saltean (eval = FALSE) si no esta instalado, en vez de fallar.
+tiene_kableExtra <- requireNamespace("kableExtra", quietly = TRUE)
 
 # Fallback para params
 if (!exists("params")) {
@@ -91,16 +93,16 @@ if (knitr::is_latex_output()) {
 
 # Dataset (optional)
 
-```{r dataset}
+```{r dataset, eval=tiene_kableExtra}
 if (isTRUE(params$INCLUDE_DATASET) && !is.null(params$DATASET)) {
   kable(head(params$DATASET), caption = "First rows of the dataset used in the analysis") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
 # Summary Statistics
 
-```{r summary}
+```{r summary, eval=tiene_kableExtra}
 if (!is.null(params$DATASET)) {
   df <- params$DATASET
 
@@ -117,22 +119,22 @@ if (!is.null(params$DATASET)) {
     )
 
   kable(summary_table, caption = "Summary statistics by species") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
 # Fitted Parameters
 
-```{r params}
+```{r params, eval=tiene_kableExtra}
 if (!is.null(params$PARAMS_ALL) && "params" %in% params$REPORT_ELEMENTS) {
   kable(params$PARAMS_ALL, caption = "Fitted parameters for each species") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
 # Interpretation of Parameters
 
-```{r interpretation}
+```{r interpretation, eval=tiene_kableExtra}
 if (!is.null(params$PARAMS_ALL)) {
 
   interpret <- function(a, h, z, k, s) {
@@ -158,22 +160,22 @@ if (!is.null(params$PARAMS_ALL)) {
     ungroup()
 
   kable(interp_table, caption = "Automatic interpretation of fitted parameters") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
 # Confidence Intervals for z (Profile Likelihood)
 
-```{r z_ci}
+```{r z_ci, eval=tiene_kableExtra}
 if (!is.null(params$Z_CI)) {
   kable(params$Z_CI, caption = "95% Confidence intervals for z (profile likelihood)") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
 # Model Comparison (AIC)
 
-```{r aic}
+```{r aic, eval=tiene_kableExtra}
 if (!is.null(params$AIC_TABLE)) {
   # Añadir columna de interpretación de delta AIC
   aic_table <- params$AIC_TABLE %>%
@@ -187,7 +189,7 @@ if (!is.null(params$AIC_TABLE)) {
       )
     )
   kable(aic_table, caption = "AIC comparison between full model (z free) and restricted model (z=1)") %>%
-    kable_styling(latex_options = "hold_position")
+    kableExtra::kable_styling(latex_options = "hold_position")
 }
 ```
 
@@ -286,7 +288,7 @@ if (!is.null(params$HIST_ALL) && "violin" %in% params$REPORT_ELEMENTS) {
 if (!is.null(params$HIST_ALL) && "fan" %in% params$REPORT_ELEMENTS) {
   p_fan <- ggplot(params$HIST_ALL, aes(x = dens, y = paras, color = species)) +
     geom_point(alpha = 0.1) +
-    geom_smooth(method = "loess", se = FALSE) +
+    geom_smooth(method = "loess", formula = y ~ x, se = FALSE) +
     theme_bw() +
     labs(title = "Fan plot of simulated parasitism",
          x = "Host density", y = "Parasitized hosts")
@@ -299,9 +301,16 @@ if (!is.null(params$HIST_ALL) && "fan" %in% params$REPORT_ELEMENTS) {
 ```{r comparison}
 if (!is.null(params$PARAMS_ALL) && length(unique(params$PARAMS_ALL$species)) >= 2) {
 
-  comp <- params$PARAMS_ALL %>%
-    select(species, a, h, z, k, s) %>%
-    pivot_longer(cols = -species, names_to = "parameter", values_to = "value")
+  # Version larga de PARAMS_ALL sin depender de tidyr::pivot_longer
+  # (tidyr no es una dependencia declarada del paquete).
+  comp <- do.call(rbind, lapply(c("a", "h", "z", "k", "s"), function(prm) {
+    data.frame(
+      species   = params$PARAMS_ALL$species,
+      parameter = prm,
+      value     = params$PARAMS_ALL[[prm]],
+      stringsAsFactors = FALSE
+    )
+  }))
 
   p_comp <- ggplot(comp, aes(x = species, y = value, fill = species)) +
     geom_bar(stat = "identity", position = "dodge") +
@@ -316,7 +325,7 @@ if (!is.null(params$PARAMS_ALL) && length(unique(params$PARAMS_ALL$species)) >= 
 
 # Analysis settings
 
-```{r analysis-settings, echo=FALSE}
+```{r analysis-settings, echo=FALSE, eval=tiene_kableExtra}
 settings <- data.frame(
   Parameter = c("Exposure time (T_exp)",
                 "Max iterations (itermax)",

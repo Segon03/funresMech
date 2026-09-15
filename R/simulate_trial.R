@@ -2,6 +2,10 @@
 # Mechanistic model functions
 ############################################################
 
+#' @importFrom stats rgamma rlnorm
+#' @noRd
+NULL
+
 #simulate_trial
 
 simulate_trial <- function(x, T, a, h, z, k, s) {

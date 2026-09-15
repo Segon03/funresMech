@@ -1,25 +1,28 @@
 Package: funresMech
 Title: Mechanistic Functional Response Analysis
-Version: 1.0.2
+Version: 1.0.4
 Authors@R: 
-    person("Segundo", "Núñez-Campero", 
-           email = "segundo.nc@conicet.gov.ar", 
-           role = c("aut", "cre"))
-X-CRAN-Comment: Okuyama is a proper name
-Description: Implements the mechanistic functional response model proposed by 
-    Okuyama (2012) for host-parasitoid systems. Provides tools for model fitting, 
-    likelihood profiling, stochastic simulation, and visualization of parasitism 
-    distributions. Includes an interactive Shiny application for complete analysis 
-    workflows. See Okuyama (2012) <doi= 10.1016/j.biocontrol.2011.10.008>.
+    person('Segundo', 'Núñez-Campero', 
+           email = 'segundo.nc@conicet.gov.ar', 
+           role = c('aut', 'cre'))
+Description: Implements the mechanistic functional response
+  model proposed by Okuyama (2012) <doi:10.1016/j.biocontrol.2011.10.008> for 
+  host-parasitoid systems. Provides tools for model fitting, likelihood 
+  profiling, stochastic simulation, and visualization of parasitism 
+  distributions.
+  Includes an interactive 'shiny' application for complete analysis workflows,
+  built with 'plotly' for interactive graphics and 'rmarkdown' for
+  reproducible reports.
 License: MIT + file LICENSE
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
+Depends: R (>= 4.1.0)
 Imports:
     DEoptim,
     dplyr,
     future,
     ggplot2 (>= 3.4.0),
     magrittr,
+    parallel,
     plotly,
     rlang,
     rmarkdown,
@@ -27,11 +30,14 @@ Imports:
     shinyBS,
     shinythemes,
     stats,
-    tidyr,
     utils
 Suggests:
-    knitr,
     kableExtra,
+    knitr,
     testthat (>= 3.0.0)
+URL: https://github.com/Segon03/funresMech
+BugReports: https://github.com/Segon03/funresMech/issues
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
 Config/Needs/check: r-lib/actions/dependencies
 Config/roxygen2/version: 8.1.0

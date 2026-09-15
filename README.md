@@ -88,7 +88,7 @@ bibtex
   author = {Segundo Núñez-Campero},
   title = {funresMech: Mechanistic Functional Response Analysis using the Okuyama Model},
   year = {2026},
-  note = {R package version 1.0.0},
+  note = {R package version 1.0.4},
   url = {https://github.com/Segon03/funresMech}
 }
 

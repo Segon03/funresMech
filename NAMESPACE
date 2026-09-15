@@ -8,10 +8,7 @@ importFrom(DEoptim,
 )
 importFrom(dplyr,
   filter,
-  group_by,
-  mutate,
-  rename,
-  summarise
+  rename
 )
 importFrom(future,
   multisession,
@@ -33,18 +30,21 @@ importFrom(ggplot2,
   ggplot,
   ggsave,
   labs,
-  position_dodge,
-  position_jitterdodge,
   scale_x_continuous,
-  theme_bw
+  theme_bw,
+  vars
 )
 importFrom(magrittr,"%>%")
+importFrom(parallel,detectCores)
 importFrom(plotly,
   ggplotly,
   plotlyOutput,
   renderPlotly
 )
-importFrom(rlang,sym)
+importFrom(rlang,
+  .data,
+  sym
+)
 importFrom(rmarkdown,render)
 importFrom(shiny,
   HTML,
@@ -63,6 +63,7 @@ importFrom(shiny,
   hr,
   incProgress,
   mainPanel,
+  need,
   numericInput,
   observeEvent,
   p,
@@ -71,12 +72,15 @@ importFrom(shiny,
   renderTable,
   renderUI,
   req,
+  selectInput,
   showNotification,
   sidebarLayout,
   sidebarPanel,
   tabPanel,
   tabsetPanel,
+  tagList,
   tags,
+  validate,
   withProgress
 )
 importFrom(shinyBS,bsTooltip)
@@ -85,9 +89,9 @@ importFrom(stats,
   qchisq,
   quantile,
   rgamma,
-  rlnorm
+  rlnorm,
+  setNames
 )
-importFrom(tidyr,pivot_longer)
 importFrom(utils,
   read.csv,
   write.csv
