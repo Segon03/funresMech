@@ -1,7 +1,6 @@
 ---
 title: "Okuyama Mechanistic Model Report"
 subtitle: "Mechanistic Functional Response Analysis"
-author: "Segundo Núñez-Campero"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output:
   html_document:
@@ -72,7 +71,6 @@ if (knitr::is_latex_output()) {
 \\begin{center}
 {\\huge \\bfseries Okuyama Mechanistic Model Report} \\\\[0.5cm]
 {\\large Mechanistic Functional Response Analysis} \\\\[1cm]
-{\\large \\textbf{Author:} Segundo Núñez-Campero} \\\\
 {\\large \\textbf{Date:}', format(Sys.time(), '%B %d, %Y'), '} \\\\
 {\\large \\textbf{Model:} Okuyama (2012), Biological Control DOI <10.1016/j.biocontrol.2011.10.008>}
 \\end{center}
@@ -84,7 +82,6 @@ if (knitr::is_latex_output()) {
   cat('<div style="padding:20px; border:2px solid #333; border-radius:10px; background:#f7f7f7;">
 <h2>Okuyama Mechanistic Model Report</h2>
 <h4>Mechanistic Functional Response Analysis</h4>
-<p><strong>Author:</strong> Segundo Núñez-Campero</p>
 <p><strong>Date:</strong>', format(Sys.time(), '%B %d, %Y'), '</p>
 <p><strong>Model:</strong> Okuyama (2012), Biological Control DOI <10.1016/j.biocontrol.2011.10.008</p>
 </div>')
