@@ -6,14 +6,17 @@ importFrom(DEoptim,
   DEoptim,
   DEoptim.control
 )
+importFrom(Rcpp,sourceCpp)
 importFrom(dplyr,
   filter,
   rename
 )
 importFrom(future,
+  future,
   multisession,
   plan,
-  sequential
+  sequential,
+  value
 )
 importFrom(ggplot2,
   aes,
@@ -86,13 +89,17 @@ importFrom(shiny,
 importFrom(shinyBS,bsTooltip)
 importFrom(shinythemes,shinytheme)
 importFrom(stats,
+  optim,
   qchisq,
   quantile,
   rgamma,
   rlnorm,
+  runif,
+  sd,
   setNames
 )
 importFrom(utils,
   read.csv,
   write.csv
 )
+useDynLib(funresMech, .registration = TRUE)

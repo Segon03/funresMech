@@ -90,11 +90,17 @@ ui <- fluidPage(
         hr(),
         tags$h5("Likelihood profile for z"),
         numericInput("z_min", "Minimum z",
-                     value = 0.5, min = 0.1, max = 5),
+                     value = 0.5, min = 0.1, max = 20),
         numericInput("z_max", "Maximum z",
-                     value = 1.5, min = 0.2, max = 5),
+                     value = 5, min = 0.2, max = 20),
         numericInput("z_step", "Step size for z",
-                     value = 0.05, min = 0.01, max = 0.5),
+                     value = 0.25, min = 0.01, max = 1),
+        checkboxInput("extend_z",
+                      "Extend the z grid if the upper limit is open",
+                      value = TRUE),
+        bsTooltip("extend_z",
+                  "If the profile does not cross the 95% threshold at the upper end of the grid, extra values of z (8, 10, 15, 20) are evaluated. If it still does not cross, the upper limit is reported as not identified.",
+                  "right", options = list(container = "body")),
         bsTooltip("z_min",
                   "Lower bound of z for the likelihood profile.",
                   "right", options = list(container = "body")),
@@ -103,6 +109,15 @@ ui <- fluidPage(
                   "right", options = list(container = "body")),
         bsTooltip("z_step",
                   "Resolution of the z grid. Smaller steps give finer profiles but are slower.",
+                  "right", options = list(container = "body")),
+
+        hr(),
+        tags$h5("Data screening"),
+        checkboxInput("run_screening",
+                      "Screen for atypical trials before fitting",
+                      value = TRUE),
+        bsTooltip("run_screening",
+                  "Flags trials that are very unlikely under the rest of the data (leave-one-out Beta-Binomial). Data are never removed.",
                   "right", options = list(container = "body")),
 
         hr(),
@@ -149,6 +164,14 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Fitted parameters",
                  tableOutput("params_table")),
+
+        tabPanel("Diagnostics",
+                 p("Warnings about the fit of each species (small k, parameters on a bound, open interval for z, noisy likelihood)."),
+                 tableOutput("diag_table")),
+
+        tabPanel("Data screening",
+                 p("Trials flagged as atypical (leave-one-out Beta-Binomial, Bonferroni threshold). Data are never removed: check these trials and, if in doubt, refit without them and compare."),
+                 tableOutput("screen_table")),
 
         tabPanel("Likelihood profile",
                  plotlyOutput("profile_plot"),
@@ -199,7 +222,7 @@ ui <- fluidPage(
                  tags$ul(
                    tags$li("Search time follows a Gamma distribution, controlled by parameter k and encounter rate lambda."),
                    tags$li("Encounter rate scales with host density x as lambda = a * x^z, where a is the baseline search efficiency and z controls how search scales with density."),
-                   tags$li("Handling time follows a Lognormal distribution with mean h and variability s, or is constant when s = 0."),
+                   tags$li("Handling time follows a Lognormal distribution with mean h and standard deviation s (same units as h), or is constant when s = 0."),
                    tags$li("The parasitoid alternates between search and handling until the total time T is exhausted."),
                    tags$li("The number of hosts attacked at least once is recorded as the functional response.")
                  ),
@@ -209,7 +232,7 @@ ui <- fluidPage(
                    tags$li("h: mean handling time per host; higher values mean slower processing and stronger saturation."),
                    tags$li("z: density-scaling exponent; z = 1 gives Type II-like behavior, z > 1 can produce Type III-like responses, z < 1 yields sublinear responses."),
                    tags$li("k: shape parameter of the Gamma search-time distribution; controls variability in search intervals."),
-                   tags$li("s: standard deviation (log-scale) of handling time; controls variability in handling.")
+                   tags$li("s: standard deviation of handling time on the natural scale (same units as h, as in Okuyama 2026); controls variability in handling. The equivalent log-scale standard deviation is sqrt(log(1 + (s / h)^2)).")
                  ),
                  h5("Emergent functional responses"),
                  p("Because the model is generative, the functional response curve is not imposed by a fixed formula. It emerges from the simulated search-encounter-handling process."),
@@ -236,12 +259,15 @@ ui <- fluidPage(
                    tags$li("Start with default Advanced settings (itermax = 50, NP = 40, reltol = 1e-2, n_sim = 3000)."),
                    tags$li("Increase itermax and NP if convergence seems poor or profiles are noisy."),
                    tags$li("Increase n_sim for smoother stochastic curves and distributions, at the cost of runtime."),
-                   tags$li("Use parallel computation with multiple cores for large datasets or many species.")
+                   tags$li("Use parallel computation with multiple cores for large datasets or many species (each value of z of the profile is fitted on its own core)."),
+                   tags$li("For final results, use n_sim = 10000, itermax = 200 and a finer z step (0.1) around the minimum; the defaults are an exploratory configuration.")
                  ),
                  h5("Interpreting results"),
                  tags$ul(
                    tags$li("Fitted parameters summarize search efficiency, handling time, density scaling, and variability."),
-                   tags$li("Likelihood profiles for z help assess whether the data support Type II-like (z ~ 1), Type III-like (z > 1), or sublinear (z < 1) behavior."),
+                   tags$li("Likelihood profiles for z help assess whether the data support Type II-like (z ~ 1), Type III-like (z > 1), or sublinear (z < 1) behavior. z_hat is the minimum of the profile and the 95% interval uses the likelihood-ratio criterion (NLL <= minimum + 1.92)."),
+                   tags$li("An interval whose upper limit is reported as 'not identified' means that the data cannot rule out arbitrarily large z (typical when k is very small); the lower limit is usually still informative."),
+                   tags$li("Check the Diagnostics and Data screening tabs: a single atypical trial can force a very small k and leave z without an upper limit."),
                    tags$li("Stochastic curves show the mean mechanistic response with uncertainty bands."),
                    tags$li("Histograms, kernel densities, boxplots, violins, and fan plots reveal the full distribution of simulated parasitism across densities.")
                  )

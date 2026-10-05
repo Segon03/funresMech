@@ -11,84 +11,82 @@
 The package includes:
 - An interactive **Shiny application** for data exploration and model fitting.
 - **Maximum likelihood estimation** using a simulation-based likelihood.
-- **Likelihood profiles** for the density-scaling exponent \\(z\\).
-- **Model comparison** via AIC between full (\\(z\\) free) and restricted (\\(z = 1\\)) models.
+- **Likelihood profiles** for the density-scaling exponent *z*.
+- **Model comparison** via AIC between full (*z* free) and restricted (\\(z = 1\\)) models.
 - **Comprehensive diagnostic plots** including stochastic curves, histograms, density plots, boxplots, violins, and fan plots.
 
 ## Installation
 
+### From CRAN
+```r
+install.packages("funresMech")
+```
+
 ### From GitHub (development version)
 ```r
-# Install from GitHub using pak (recommended)
+# Using pak (recommended)
 install.packages("pak")
 pak::pkg_install("Segon03/funresMech")
 
-# Or using devtools (legacy)
+# Or using devtools
 install.packages("devtools")
 devtools::install_github("Segon03/funresMech")
-From CRAN (stable version, once published)
-r
-install.packages("funresMech")
-Basic Usage
-Launch the Shiny App
-r
+```
+
+Since version 1.1.0 the package contains compiled code (C++ via 'Rcpp'). On
+Windows and macOS, installing from GitHub requires a compiler (Rtools /
+Xcode command line tools); the CRAN version is distributed as a binary.
+
+## Usage
+
+### Launch the Shiny app
+```r
 library(funresMech)
 run_app()
-This opens the interactive application where you can:
+```
 
-Upload your dataset (CSV format).
+In the app you can:
 
-Select columns for species, host density, and parasitism.
+1. Upload your dataset (CSV): one row per trial with species, host density and number of parasitised hosts.
+2. Select the columns, the experiment duration *T* and the grid of *z*.
+3. Run the analysis: parameters, likelihood profile of *z* with its 95% interval, AIC (free *z* vs *z* = 1), stochastic curves and distributions.
+4. Review the **Diagnostics** and **Data screening** tabs, and download an HTML report.
 
-Configure advanced settings (simulation parameters, optimization options).
+For reproducible results call `set.seed()` before `run_app()`; the likelihood profile is computed in parallel and gives the same result as a sequential run with the same seed.
 
-Run the analysis and explore results interactively.
+## Features
 
-Programmatic Usage (Advanced)
-r
-# Load the package
-library(funresMech)
+- **Mechanistic simulation:** search times follow a Gamma distribution; handling times follow a Lognormal distribution with mean `h` and standard deviation `s` (natural scale, as in Okuyama 2026). The engine is written in C++ ('Rcpp').
+- **Simulated likelihood:** the probability distribution of parasitism is generated through repeated simulations.
+- **Flexible density scaling:** the exponent *z* allows Type I, II and III-like responses.
+- **Uncertainty:** 95% interval of *z* from the likelihood profile (likelihood-ratio threshold of 1.92 log-likelihood units), with automatic extension and refinement of the grid when a limit is open.
+- **Diagnostics and screening of atypical trials** (data are never removed).
+- **Interactive visualisation** with 'plotly' and **reports** in HTML.
 
-# Prepare your data (example format)
-data <- data.frame(
-  species = rep("Species_A", 30),
-  dens = rep(c(10, 20, 40, 80, 160), each = 6),
-  par = c(2, 3, 5, 8, 12, ...)  # Your data
-)
+## What is new in 1.1.0
 
-# Fit the model (internal functions)
-# See package documentation for details
-Features
-Mechanistic simulation: Search times follow a Gamma distribution; handling times follow a Lognormal distribution.
+Version 1.1.0 replaces the computational core and changes some results with
+respect to 1.0.4 (scale of `s`, threshold of the interval, search on the log
+scale). See [NEWS.md](NEWS.md) for the details.
 
-Stochastic likelihood: The probability distribution of parasitism is generated through repeated simulations.
+## Documentation
 
-Flexible density scaling: The exponent \(z\) allows emergence of Type I, II, III-like responses.
-
-Uncertainty quantification: Confidence intervals for \(z\) via profile likelihood.
-
-Interactive visualization: Dynamic plots with plotly for exploring results.
-
-Comprehensive reporting: Generate HTML reports summarizing all analyses.
-
-Documentation
-Full documentation is available within the package:
-
-r
-# View package documentation
+```r
 help(package = "funresMech")
-
-# Get help for specific functions
+?funresMech
 ?run_app
-Citation
+```
+
+## Citation
+
 If you use funresMech in your research, please cite:
 
-bibtex
+```bibtex
 @article{NunezCampero2026,
   author = {Segundo Núñez-Campero},
   title = {funresMech: Mechanistic Functional Response Analysis using the Okuyama Model},
   year = {2026},
-  note = {R package version 1.0.4},
+  note = {R package version 1.1.0},
   url = {https://github.com/Segon03/funresMech}
 }
 
@@ -110,19 +108,18 @@ bibtex
   year = {2026},
   doi = {10.1111/jen.70148}
 }
-License
-This package is distributed under the MIT License:
+```
 
-YEAR: 2026
+## License
 
-COPYRIGHT HOLDER: Segundo Núñez-Campero
+MIT License (see the `LICENSE` file). Copyright holder: Segundo Núñez-Campero.
 
-For more details, see the LICENSE file.
+## Contributing
 
-Contributing
-Contributions are welcome! Please feel free to submit issues, feature requests, or pull requests on GitHub.
+Contributions are welcome. Please submit issues, feature requests or pull requests on GitHub.
 
-References
-Okuyama, T. (2012). A likelihood approach for functional response models. Biological Control, 60(2), 103–107.
+## References
 
-Okuyama, T. (2026). Parametric Assumptions in Parasitoid Functional Response Analysis. Journal of Applied Entomology.
+Okuyama, T. (2012). A likelihood approach for functional response models. *Biological Control*, 60(2), 103-107.
+
+Okuyama, T. (2026). Parametric Assumptions in Parasitoid Functional Response Analysis. *Journal of Applied Entomology*.

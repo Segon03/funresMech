@@ -8,11 +8,10 @@
 #'   geom_histogram geom_density geom_boxplot geom_violin geom_smooth
 #'   geom_jitter scale_x_continuous facet_grid vars theme_bw labs ggsave
 #' @importFrom dplyr filter rename
-#' @importFrom DEoptim DEoptim DEoptim.control
 #' @importFrom future plan multisession sequential
 #' @importFrom parallel detectCores
 #' @importFrom rmarkdown render
-#' @importFrom stats quantile qchisq setNames
+#' @importFrom stats quantile setNames
 #' @importFrom magrittr %>%
 #' @importFrom utils read.csv write.csv
 #' @importFrom rlang sym .data
@@ -64,7 +63,9 @@ server <- function(input, output, session) {
     curve_all = NULL,
     hist_all = NULL,
     aic_table = NULL,
-    z_ci = NULL
+    z_ci = NULL,
+    diag = NULL,
+    screen = NULL
   )
 
   output$column_select <- renderUI({
@@ -91,7 +92,7 @@ server <- function(input, output, session) {
     # Evita NAs si n_species supera el numero de especies disponibles
     n_sel <- min(as.integer(input$n_species), length(species_list))
     if (n_sel < 1L) {
-      showNotification("No se encontraron especies en la columna seleccionada.",
+      showNotification("No species found in the selected column.",
                        type = "error")
       return(invisible(NULL))
     }
@@ -103,6 +104,8 @@ server <- function(input, output, session) {
     all_hist_data  <- list()
     all_aic        <- list()
     all_z_ci       <- list()
+    all_diag       <- list()
+    all_screen     <- list()
 
     # Restaurar el plan de 'future' del usuario al salir, pase lo que pase
     old_plan <- plan()
@@ -116,6 +119,9 @@ server <- function(input, output, session) {
       plan(sequential)
     }
 
+    # An error in the analysis must not close the app: it is reported to the
+    # user and the previous results are kept.
+    ok <- tryCatch({
     withProgress(message = "Running mechanistic analysis...", value = 0, {
 
       for (sp in selected_species) {
@@ -129,159 +135,96 @@ server <- function(input, output, session) {
             par  = !!sym(input$par_col)
           )
 
-        full_fit <- fit_full(
-          data_spp      = dat_sp,
-          T_exp         = input$T_exp,
-          itermax       = input$itermax,
-          NP            = input$NP,
-          reltol        = input$reltol,
-          n_sim_profile = input$n_sim
-        )
-
-        a <- full_fit$par["a"]
-        h <- full_fit$par["h"]
-        z <- full_fit$par["z"]
-        k <- full_fit$par["k"]
-        s <- full_fit$par["s"]
-        nll_full <- full_fit$nll
-
-        z_grid  <- seq(input$z_min, input$z_max, by = input$z_step)
-        profile <- data.frame(z = z_grid, nll = NA_real_)
-
-        for (i in seq_along(z_grid)) {
-          z_val <- z_grid[i]
-
-          lower <- c(a = 0.001, h = 0.001, k = 0.5, s = 0.001)
-          upper <- c(a = 2.0,   h = 0.5,   k = 5.0, s = 0.5)
-
-          res <- DEoptim(
-            fn = function(par) {
-              negloglik_fixed_z(
-                par_vec  = par,
-                z_fixed  = z_val,
-                data_spp = dat_sp,
-                T        = input$T_exp,
-                n_sim    = input$n_sim
-              )
-            },
-            lower = lower,
-            upper = upper,
-            control = DEoptim.control(
-              itermax = input$itermax,
-              NP      = input$NP,
-              reltol  = input$reltol,
-              trace   = FALSE
-            )
-          )
-
-          profile$nll[i] <- res$optim$bestval
+        chk <- tryCatch(.check_data_spp(dat_sp), error = function(e) e)
+        if (inherits(chk, "error")) {
+          showNotification(paste0("Species ", sp, ": ", conditionMessage(chk)),
+                           type = "error")
+          next
         }
 
-        profile$species  <- sp
-        all_profiles[[sp]] <- profile
-
-        AIC_full <- 2 * nll_full + 2 * 5
-        z_vals   <- profile$z
-        nll_vals <- profile$nll
-
-        if (min(z_vals) <= 1 && max(z_vals) >= 1) {
-          idx <- which.min(abs(z_vals - 1))
-          if (abs(z_vals[idx] - 1) < 0.01) {
-            nll_1 <- nll_vals[idx]
-          } else {
-            idx_low  <- max(which(z_vals <= 1))
-            idx_high <- min(which(z_vals >= 1))
-            if (idx_low > 0 && idx_high <= length(z_vals)) {
-              z_low    <- z_vals[idx_low]
-              nll_low  <- nll_vals[idx_low]
-              z_high   <- z_vals[idx_high]
-              nll_high <- nll_vals[idx_high]
-              nll_1 <- nll_low +
-                (nll_high - nll_low) * (1 - z_low) / (z_high - z_low)
-            } else {
-              nll_1 <- NA
+        # Screening of atypical trials BEFORE the fit (never removes data)
+        if (isTRUE(input$run_screening)) {
+          scr <- tryCatch(screen_outliers(dat_sp, input$T_exp),
+                          error = function(e) NULL)
+          if (!is.null(scr)) {
+            scr$species <- sp
+            all_screen[[as.character(sp)]] <- scr
+            n_flag <- sum(scr$flagged)
+            if (n_flag > 0) {
+              showNotification(
+                paste0("Species ", sp, ": ", n_flag, " atypical trial(s) ",
+                       "flagged (see 'Data screening'). A single atypical ",
+                       "trial can leave z without an upper limit; consider a ",
+                       "sensitivity analysis without it."),
+                type = "warning", duration = 15)
             }
           }
-        } else {
-          nll_1 <- NA
         }
 
-        if (!is.na(nll_1)) {
-          AIC_restricted <- 2 * nll_1 + 2 * 4
-          delta_AIC <- AIC_restricted - AIC_full
-        } else {
-          AIC_restricted <- NA
-          delta_AIC <- NA
-        }
+        z_grid <- seq(input$z_min, input$z_max, by = input$z_step)
 
-        all_aic[[sp]] <- data.frame(
-          species        = sp,
-          AIC_full       = AIC_full,
-          AIC_restricted = AIC_restricted,
-          delta_AIC      = delta_AIC,
+        fit <- fit_profile(
+          data_spp = dat_sp,
+          T_exp    = input$T_exp,
+          z_grid   = z_grid,
+          n_sim    = input$n_sim,
+          itermax  = input$itermax,
+          NP       = input$NP,
+          reltol   = input$reltol,
+          extend_z = isTRUE(input$extend_z)
+        )
+
+        a <- unname(fit$par["a"])
+        h <- unname(fit$par["h"])
+        z <- unname(fit$par["z"])
+        k <- unname(fit$par["k"])
+        s <- unname(fit$par["s"])
+
+        profile <- fit$profile
+        profile$species <- sp
+        all_profiles[[as.character(sp)]] <- profile
+
+        all_aic[[as.character(sp)]] <- data.frame(
+          species          = sp,
+          AIC_full         = fit$aic$AIC_full,
+          AIC_restricted   = fit$aic$AIC_restricted,
+          delta_AIC        = fit$aic$delta_AIC,
           stringsAsFactors = FALSE
         )
 
-        min_nll   <- min(profile$nll)
-        threshold <- min_nll + qchisq(0.95, 1)
-        idx_min   <- which.min(nll_vals)
-
-        z_low <- NA
-        for (i in seq(idx_min, 1, by = -1)) {
-          if (nll_vals[i] >= threshold) {
-            if (i < length(z_vals)) {
-              z1 <- z_vals[i];     n1 <- nll_vals[i]
-              z2 <- z_vals[i + 1]; n2 <- nll_vals[i + 1]
-              z_low <- z1 + (z2 - z1) * (threshold - n1) / (n2 - n1)
-            } else {
-              z_low <- z_vals[i]
-            }
-            break
-          }
-        }
-
-        z_high <- NA
-        for (i in seq(idx_min, length(z_vals), by = 1)) {
-          if (nll_vals[i] >= threshold) {
-            if (i > 1) {
-              z1 <- z_vals[i - 1]; n1 <- nll_vals[i - 1]
-              z2 <- z_vals[i];     n2 <- nll_vals[i]
-              z_high <- z1 + (z2 - z1) * (threshold - n1) / (n2 - n1)
-            } else {
-              z_high <- z_vals[i]
-            }
-            break
-          }
-        }
-
-        all_z_ci[[sp]] <- data.frame(
+        ci <- fit$ci
+        ci_note <- c(
+          if (ci$low_censored)  paste0("lower limit <= ", min(profile$z)),
+          if (ci$high_censored) .high_open_text(max(profile$z))
+        )
+        all_z_ci[[as.character(sp)]] <- data.frame(
           species    = sp,
-          z_estimate = unname(z),
-          z_low      = z_low,
-          z_high     = z_high,
+          z_estimate = z,
+          z_low      = ci$z_low,
+          z_high     = ci$z_high,
+          ci_note    = if (length(ci_note)) paste(ci_note, collapse = "; ") else "",
           stringsAsFactors = FALSE
         )
 
-        params_df <- as.data.frame(t(full_fit$par))
+        all_diag[[as.character(sp)]] <- data.frame(
+          species = sp,
+          k_hat   = k,
+          notes   = if (length(fit$notes)) paste(fit$notes, collapse = " | ") else "No warnings",
+          stringsAsFactors = FALSE
+        )
+
+        params_df <- as.data.frame(t(fit$par))
         params_df$species <- sp
-        params_df$nll     <- nll_full
-        all_params[[sp]]  <- params_df
+        params_df$nll     <- fit$nll
+        all_params[[as.character(sp)]] <- params_df
 
         densities  <- sort(unique(dat_sp$dens))
         curve_data <- data.frame()
         hist_data  <- data.frame()
 
-        simulate_okuyama <- function(x, T, a, h, z, k, s, n_sim) {
-          counts <- integer(n_sim)
-          for (i in seq_len(n_sim)) {
-            counts[i] <- simulate_trial(x, T, a, h, z, k, s)
-          }
-          counts
-        }
-
         for (x in densities) {
-          sims <- simulate_okuyama(x, input$T_exp, a, h, z, k, s,
-                                   n_sim = input$n_sim)
+          sims <- motor_okuyama_cpp(as.integer(x), a, h, z, k, s,
+                                    input$T_exp, as.integer(input$n_sim))
 
           curve_data <- rbind(
             curve_data,
@@ -306,10 +249,17 @@ server <- function(input, output, session) {
           )
         }
 
-        all_curve_data[[sp]] <- curve_data
-        all_hist_data[[sp]]  <- hist_data
+        all_curve_data[[as.character(sp)]] <- curve_data
+        all_hist_data[[as.character(sp)]]  <- hist_data
       }
     })
+    TRUE
+    }, error = function(e) {
+      showNotification(paste0("The analysis failed: ", conditionMessage(e)),
+                       type = "error", duration = NULL)
+      FALSE
+    })
+    if (!isTRUE(ok)) return(invisible(NULL))
 
     rv$params_all   <- do.call(rbind, all_params)
     rv$profiles_all <- do.call(rbind, all_profiles)
@@ -317,6 +267,8 @@ server <- function(input, output, session) {
     rv$hist_all     <- do.call(rbind, all_hist_data)
     rv$aic_table    <- do.call(rbind, all_aic)
     rv$z_ci         <- do.call(rbind, all_z_ci)
+    rv$diag         <- do.call(rbind, all_diag)
+    rv$screen       <- do.call(rbind, all_screen)
   })
 
 
@@ -526,6 +478,21 @@ server <- function(input, output, session) {
     rv$params_all
   }, rownames = FALSE)
 
+  output$diag_table <- renderTable({
+    req(rv$diag)
+    rv$diag
+  }, rownames = FALSE)
+
+  output$screen_table <- renderTable({
+    validate(need(!is.null(rv$screen),
+                  "Screening was not run (enable it in the sidebar) or found nothing to report."))
+    scr <- rv$screen
+    scr <- scr[scr$flagged | scr$influences_dispersion, , drop = FALSE]
+    validate(need(nrow(scr) > 0, "No atypical or influential trials were flagged."))
+    scr[, c("species", "row", "dens", "par", "expected_loo", "p_loo",
+            "rho_change", "flagged")]
+  }, rownames = FALSE)
+
   output$profile_plot <- renderPlotly({ ggplotly(plot_profile_plotly()) })
   output$curve_plot   <- renderPlotly({ ggplotly(plot_curve_plotly())   })
   output$hist_plot    <- renderPlotly({ ggplotly(plot_hist_plotly())    })
@@ -728,6 +695,8 @@ server <- function(input, output, session) {
         HIST_ALL        = rv$hist_all,
         AIC_TABLE       = rv$aic_table,
         Z_CI            = rv$z_ci,
+        DIAG            = rv$diag,
+        SCREEN          = rv$screen,
         REPORT_ELEMENTS = input$report_elements,
         INCLUDE_DATASET = input$include_dataset,
         T_EXP           = input$T_exp,

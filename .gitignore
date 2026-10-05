@@ -1,3 +1,23 @@
-.Rproj.user
-NEWS.md
+# RStudio / R
+.Rproj.user/
+*.Rproj
 .Rhistory
+.RData
+.Ruserdata
+
+# Compiled code (se genera al instalar)
+src/*.o
+src/*.so
+src/*.dll
+
+# Salidas de build y check
+*.Rcheck/
+funresMech_*.tar.gz
+
+# Archivos de desarrollo local (rutas locales, scripts de prueba, contexto de trabajo)
+dev/
+CLAUDE.md
+
+# Sistema
+.DS_Store
+Thumbs.db

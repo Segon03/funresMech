@@ -24,6 +24,8 @@ params:
   HIST_ALL: NULL
   AIC_TABLE: NULL
   Z_CI: NULL
+  DIAG: NULL
+  SCREEN: NULL
   REPORT_ELEMENTS: NULL
   INCLUDE_DATASET: FALSE
   T_EXP: NULL
@@ -57,6 +59,8 @@ if (!exists("params")) {
     HIST_ALL = NULL,
     AIC_TABLE = NULL,
     Z_CI = NULL,
+    DIAG = NULL,
+    SCREEN = NULL,
     REPORT_ELEMENTS = NULL,
     INCLUDE_DATASET = FALSE
   )
@@ -145,7 +149,8 @@ if (!is.null(params$PARAMS_ALL)) {
     if (h >= 0.05 && h < 0.15) out <- c(out, "Moderate handling time.")
     if (h >= 0.15) out <- c(out, "Slow handling time: strong saturation.")
 
-    if (s > 0.2) out <- c(out, "High variability in handling time.")
+    # s is the sd of handling time on the natural scale: judge it by CV = s / h
+    if (h > 0 && s / h > 0.5) out <- c(out, "High variability in handling time.")
     if (k < 1) out <- c(out, "High variability in search time.")
 
     paste(out, collapse = " ")
@@ -165,8 +170,26 @@ if (!is.null(params$PARAMS_ALL)) {
 
 ```{r z_ci, eval=tiene_kableExtra}
 if (!is.null(params$Z_CI)) {
-  kable(params$Z_CI, caption = "95% Confidence intervals for z (profile likelihood)") %>%
+  kable(params$Z_CI, caption = "95% confidence intervals for z (profile likelihood, NLL <= minimum + 1.92). An open limit means that z is not identified on that side.") %>%
     kableExtra::kable_styling(latex_options = "hold_position")
+}
+```
+
+# Diagnostics
+
+```{r diagnostics, eval=tiene_kableExtra}
+if (!is.null(params$DIAG)) {
+  kable(params$DIAG, caption = "Fit diagnostics by species") %>%
+    kableExtra::kable_styling(latex_options = "hold_position")
+}
+if (!is.null(params$SCREEN)) {
+  scr <- params$SCREEN[params$SCREEN$flagged | params$SCREEN$influences_dispersion, , drop = FALSE]
+  if (nrow(scr) > 0) {
+    kable(scr[, c("species", "row", "dens", "par", "expected_loo", "p_loo",
+                  "rho_change", "flagged")],
+          caption = "Trials flagged by the screening for atypical observations (data were not removed)") %>%
+      kableExtra::kable_styling(latex_options = "hold_position")
+  }
 }
 ```
 
@@ -330,7 +353,7 @@ settings <- data.frame(
                 "Relative tolerance (reltol)",
                 "Number of simulations (n_sim)",
                 "Min z",
-                "Max z",
+                "Max z (initial grid)",
                 "Step z",
                 "CPU cores"),
   Value = c(

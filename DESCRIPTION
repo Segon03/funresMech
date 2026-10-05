@@ -1,6 +1,6 @@
 Package: funresMech
 Title: Mechanistic Functional Response Analysis
-Version: 1.0.4
+Version: 1.1.0
 Authors@R: 
     person('Segundo', 'Núñez-Campero', 
            email = 'segundo.nc@conicet.gov.ar', 
@@ -10,6 +10,7 @@ Description: Implements the mechanistic functional response
   host-parasitoid systems. Provides tools for model fitting, likelihood 
   profiling, stochastic simulation, and visualization of parasitism 
   distributions.
+  The stochastic simulation engine is implemented in C++ via 'Rcpp'.
   Includes an interactive 'shiny' application for complete analysis workflows,
   built with 'plotly' for interactive graphics and 'rmarkdown' for
   reproducible reports.
@@ -24,6 +25,7 @@ Imports:
     magrittr,
     parallel,
     plotly,
+    Rcpp,
     rlang,
     rmarkdown,
     shiny,
@@ -31,6 +33,8 @@ Imports:
     shinythemes,
     stats,
     utils
+LinkingTo:
+    Rcpp
 Suggests:
     kableExtra,
     knitr,
