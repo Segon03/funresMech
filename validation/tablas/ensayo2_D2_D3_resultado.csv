@@ -1,0 +1,3 @@
+"dataset","z_hat_mech","ci_low_mech","ci_high_mech","z_max_grilla","aic_mech","aic_bb","delta_aic_bb_vs_mech","bb_convergio","aic_restricted_z1","delta_aic_full_vs_restricted","favorece_mecanistico","favorece_tipoIII_vs_tipoII","ci_excluye_z1","reproduce_okuyama2026"
+"D2",1.48589922905717,0.895526177853847,1.51938883939802,2.9,377.333821815337,346.919280250576,-30.4145415647615,TRUE,360.083787742557,-17.2500340727804,FALSE,FALSE,FALSE,FALSE
+"D3",2.09648311329079,1.27785073067305,4.32425645761897,5.9,276.085293376635,275.255783888628,-0.829509488007488,TRUE,294.671631881608,18.5863385049728,FALSE,TRUE,TRUE,FALSE

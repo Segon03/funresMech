@@ -123,3 +123,9 @@ Contributions are welcome. Please submit issues, feature requests or pull reques
 Okuyama, T. (2012). A likelihood approach for functional response models. *Biological Control*, 60(2), 103-107.
 
 Okuyama, T. (2026). Parametric Assumptions in Parasitoid Functional Response Analysis. *Journal of Applied Entomology*.
+
+## Validation materials
+
+The scripts, data, results and figures used to validate version 1.1.0 (engine equivalence,
+parameter recovery, reproduction of Okuyama 2026 on real data) are in [`validation/`](validation/).
+They are not part of the installed package.

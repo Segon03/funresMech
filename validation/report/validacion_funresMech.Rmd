@@ -1,0 +1,63 @@
+---
+title: "Validación del paquete funresMech con el modelo de Okuyama como motor"
+author: "Segundo Núñez-Campero"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+library(dplyr)
+library(knitr)
+```
+
+## 1. Objetivo
+
+Este reporte resume la validación de funresMech (motor: modelo mecanístico
+de Okuyama 2012/2026) en dos ensayos: recuperación de parámetros bajo
+simulación controlada (Ensayo 1) y reproducción de las conclusiones de
+Okuyama (2026) en datos reales de FoRAGE (Ensayo 2, datasets D2 y D3).
+
+## 2. Ensayo 1 — Recuperación de parámetros
+
+```{r ensayo1-tabla}
+resumen1 <- read.csv("../tablas/ensayo1_resumen_por_rho.csv")
+kable(resumen1, digits = 3)
+```
+
+```{r ensayo1-figuras, out.width="49%", fig.show="hold"}
+knitr::include_graphics(c("../figuras/fig_ensayo1_z_por_rho.png",
+                           "../figuras/fig_ensayo1_cobertura.png"))
+```
+
+## 3. Ensayo 2 — Reproducción de Okuyama (2026) en D2 y D3
+
+```{r ensayo2-tabla}
+tabla2 <- read.csv("../tablas/ensayo2_D2_D3_resultado.csv")
+kable(tabla2, digits = 3)
+```
+
+```{r ensayo2-figuras, out.width="49%", fig.show="hold"}
+knitr::include_graphics(c("../figuras/fig_ensayo2_perfiles.png",
+                           "../figuras/fig_ensayo2_forest_z.png"))
+```
+
+## 4. Síntesis
+
+```{r sintesis, results="asis"}
+if (all(tabla2$reproduce_okuyama2026)) {
+  cat("**funresMech reprodujo, para D2 y D3, tanto la ventaja de AIC del",
+      "modelo mecanístico como la exclusión de z=1 del IC95%, tal como",
+      "reportó Okuyama (2026).**")
+} else {
+  cat("**Al menos uno de los dos datasets no reprodujo completamente la",
+      "conclusión de Okuyama (2026); ver la Sección 4.5 del plan de",
+      "validación para el protocolo de diagnóstico.**")
+}
+```
+
+## 5. Sesión de R
+
+```{r session-info}
+sessionInfo()
+```

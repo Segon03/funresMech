@@ -1,0 +1,3 @@
+"dataset","z_hat_mech","ci_low_mech","ci_high_mech","aic_mech","aic_bb","delta_aic_bb_vs_mech","favorece_mecanistico","ci_excluye_z1","reproduce_okuyama2026"
+"D2",1.1,0.895526177853847,1.51938883939802,377.333821815337,346.919280250576,-30.4145415647615,FALSE,FALSE,FALSE
+"D3",2.3,1.27785073067305,NA,276.085293376635,276.030809308751,-0.0544840678837772,FALSE,TRUE,FALSE
