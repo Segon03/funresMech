@@ -181,3 +181,41 @@ test_that("Beta-Binomial reference reproduces the NLL implied by Okuyama (2026, 
     expect_lt(abs(b$nll - cs$nll), 0.15)
   }
 })
+
+test_that("joint estimation of z with an adaptive profile for the interval", {
+  skip_on_cran()
+  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 15,
+                         n_reeval = 2, bb = FALSE)
+  set.seed(9)
+  f <- suppressWarnings(fit_funres(datos, 24, control = ctrl, z_method = "joint",
+                                   z_step = 0.5, refine = FALSE))
+  expect_equal(f$z_method, "joint")
+  expect_equal(nrow(f$joint), 1)
+  expect_true(f$joint$z >= 0.1 && f$joint$z <= 20)
+  expect_true(1 %in% round(f$profile$z, 6))            # z = 1 evaluated for the AIC
+  expect_true(f$joint$z %in% f$profile$z)
+  expect_equal(coef(f)[["z"]], f$profile$z[which.min(f$profile$nll)])
+  expect_false(is.na(f$aic$AIC_restricted))
+})
+
+test_that("alternative optimisers, common random numbers and polish run", {
+  skip_on_cran()
+  base <- list(datos, 24, z_grid = 1.5, extend_z = FALSE, refine = FALSE)
+  for (meth in c("CMAES", "CRS2")) {
+    skip_if_not_installed(if (meth == "CMAES") "cmaes" else "nloptr")
+    ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12,
+                           n_reeval = 2, method = meth, bb = FALSE)
+    set.seed(10)
+    f <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
+    expect_true(is.finite(f$nll))
+  }
+  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 6, NP = 12,
+                         n_reeval = 2, crn = TRUE, polish = 30, bb = FALSE)
+  set.seed(11)
+  f <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
+  expect_true(is.finite(f$nll))
+  # with common random numbers the reproducibility with set.seed() is kept
+  set.seed(12); f1 <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
+  set.seed(12); f2 <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
+  expect_identical(f1$profile, f2$profile)
+})

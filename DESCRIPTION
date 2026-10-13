@@ -40,8 +40,10 @@ Imports:
 LinkingTo:
     Rcpp
 Suggests:
+    cmaes,
     kableExtra,
     knitr,
+    nloptr,
     testthat (>= 3.0.0)
 URL: https://github.com/Segon03/funresMech
 BugReports: https://github.com/Segon03/funresMech/issues

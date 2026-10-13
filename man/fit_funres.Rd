@@ -13,6 +13,8 @@ fit_funres(
   extend_z = TRUE,
   z_extend = c(8, 10, 15, 20),
   refine = TRUE,
+  z_method = c("profile", "joint"),
+  z_step = 0.25,
   dens = "dens",
   response = "par",
   time_unit = "time units"
@@ -37,6 +39,16 @@ estimate, evaluate the values in \code{z_extend} as well.}
 
 \item{refine}{Add grid points inside brackets wider than the grid step
 where the profile crosses the threshold.}
+
+\item{z_method}{\code{"profile"} (default): z is fixed at each value of
+\code{z_grid} and the minimum of the profile is the estimate. \code{"joint"}: z is
+estimated together with the other parameters, and the profile is then
+computed only around the estimate, in steps of \code{z_step} (growing when the
+profile is flat), until the 95\% threshold is crossed on each side or the
+search bounds of z are reached. The joint estimate is kept only if no
+profile point has a lower NLL.}
+
+\item{z_step}{Initial step of the adaptive profile of the joint method.}
 
 \item{dens, response}{Names of the columns with host density and number of
 hosts parasitized (prey consumed).}

@@ -16,6 +16,8 @@ funres_control(
   bounds = list(),
   widen = 2L,
   bb = TRUE,
+  crn = FALSE,
+  polish = 0L,
   cut = TRUE
 )
 }
@@ -39,7 +41,11 @@ optimum. Their mean (an unbiased estimate, unlike the minimum found by
 the optimiser) is used for the profile, the estimate of z and its
 interval; their standard error measures Monte Carlo noise.}
 
-\item{method}{Optimisation method. Currently \code{"DEoptim"}.}
+\item{method}{Optimisation method: \code{"DEoptim"} (differential evolution,
+default), \code{"CMAES"} (covariance matrix adaptation evolution strategy,
+package 'cmaes') or \code{"CRS2"} (controlled random search with local
+mutation, package 'nloptr'). All use a budget of about \code{itermax * NP}
+evaluations of the likelihood.}
 
 \item{bounds}{Named list of search bounds \code{c(lower, upper)} replacing the
 defaults: \code{lambda} (encounter rate at the reference density, per unit
@@ -52,6 +58,14 @@ refits the affected points of the profile). 0 disables it.}
 
 \item{bb}{Fit the reference Beta-Binomial model with the same expected
 value (Okuyama 2026) and report its AIC.}
+
+\item{crn}{Use common random numbers during the search: every evaluation
+uses the same random seed, so the objective becomes deterministic in the
+parameters (but piecewise constant). Re-evaluations at the optimum always
+use fresh random numbers.}
+
+\item{polish}{Number of Nelder-Mead evaluations used to refine the best
+point found by the global method (0 = none).}
 
 \item{cut}{Stop each simulated trial once all hosts have been attacked
 (exact; only saves time).}

@@ -37,7 +37,17 @@ NULL
 #'   optimum. Their mean (an unbiased estimate, unlike the minimum found by
 #'   the optimiser) is used for the profile, the estimate of z and its
 #'   interval; their standard error measures Monte Carlo noise.
-#' @param method Optimisation method. Currently `"DEoptim"`.
+#' @param method Optimisation method: `"DEoptim"` (differential evolution,
+#'   default), `"CMAES"` (covariance matrix adaptation evolution strategy,
+#'   package 'cmaes') or `"CRS2"` (controlled random search with local
+#'   mutation, package 'nloptr'). All use a budget of about `itermax * NP`
+#'   evaluations of the likelihood.
+#' @param crn Use common random numbers during the search: every evaluation
+#'   uses the same random seed, so the objective becomes deterministic in the
+#'   parameters (but piecewise constant). Re-evaluations at the optimum always
+#'   use fresh random numbers.
+#' @param polish Number of Nelder-Mead evaluations used to refine the best
+#'   point found by the global method (0 = none).
 #' @param bounds Named list of search bounds `c(lower, upper)` replacing the
 #'   defaults: `lambda` (encounter rate at the reference density, per unit
 #'   time), `h` (mean handling time, time units), `k`, `cv_h` (s / h) and `z`.
@@ -58,7 +68,7 @@ NULL
 funres_control <- function(preset = c("standard", "exploratory", "final"),
                            n_sim, itermax, NP, reltol, steptol, n_reeval,
                            method = "DEoptim", bounds = list(), widen = 2L,
-                           bb = TRUE, cut = TRUE) {
+                           bb = TRUE, crn = FALSE, polish = 0L, cut = TRUE) {
   preset <- match.arg(preset)
   p <- switch(preset,
               exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
@@ -70,13 +80,14 @@ funres_control <- function(preset = c("standard", "exploratory", "final"),
   if (!missing(n_reeval)) p$n_reeval <- as.integer(n_reeval)
   p$reltol  <- if (missing(reltol)) 1e-8 else reltol
   p$steptol <- if (missing(steptol)) p$itermax else as.integer(steptol)
-  method <- match.arg(method, "DEoptim")
+  method <- match.arg(method, c("DEoptim", "CMAES", "CRS2"))
   if (p$n_sim < 100) stop("n_sim must be >= 100.", call. = FALSE)
   if (p$NP < 4) stop("NP must be >= 4.", call. = FALSE)
   if (p$n_reeval < 1) stop("n_reeval must be >= 1.", call. = FALSE)
   structure(c(list(preset = preset), p,
               list(method = method, bounds = bounds, widen = as.integer(widen),
-                   bb = isTRUE(bb), cut = isTRUE(cut))),
+                   bb = isTRUE(bb), crn = isTRUE(crn), polish = as.integer(polish),
+                   cut = isTRUE(cut))),
             class = "funres_control")
 }
 
@@ -107,6 +118,62 @@ print.funres_control <- function(x, ...) {
   invisible(TRUE)
 }
 
+# .optimise
+#
+# Minimises fn over the box [ptab$lower, ptab$upper] with the method of the
+# control object and the same budget of evaluations (about itermax * NP).
+# Returns theta, value (best value found, biased low for a noisy objective),
+# trace (best value per generation/iteration), pop (final population, when
+# the method has one) and nfeval. An optional Nelder-Mead polish (ctrl$polish
+# evaluations) refines the best point.
+.optimise <- function(fn, ptab, ctrl, initialpop = NULL) {
+  lo <- ptab$lower; up <- ptab$upper; d <- length(lo)
+  rng <- up - lo
+  to_theta <- function(u) lo + u * rng                 # unit cube -> theta
+  fn_u <- function(u) if (any(u < 0 | u > 1)) 1e10 else fn(to_theta(u))
+  out <- switch(ctrl$method,
+    DEoptim = {
+      r <- DEoptim(fn = fn, lower = lo, upper = up,
+                   control = DEoptim.control(itermax = ctrl$itermax, NP = ctrl$NP,
+                                             reltol = ctrl$reltol, steptol = ctrl$steptol,
+                                             trace = FALSE, initialpop = initialpop))
+      list(theta = unname(r$optim$bestmem), value = r$optim$bestval,
+           trace = r$member$bestvalit, pop = r$member$pop, nfeval = r$optim$nfeval)
+    },
+    CMAES = {
+      if (!requireNamespace("cmaes", quietly = TRUE))
+        stop("method 'CMAES' needs the package 'cmaes'.", call. = FALSE)
+      r <- cmaes::cma_es(stats::runif(d), fn_u, lower = rep(0, d), upper = rep(1, d),
+                         control = list(maxit = ctrl$itermax, lambda = ctrl$NP,
+                                        sigma = 0.3, diag.value = TRUE,
+                                        stopfitness = -Inf))
+      tr <- if (!is.null(r$diagnostic$value)) cummin(apply(r$diagnostic$value, 1, min)) else numeric(0)
+      list(theta = to_theta(r$par), value = r$value, trace = tr, pop = NULL,
+           nfeval = r$counts[[1]])
+    },
+    CRS2 = {
+      if (!requireNamespace("nloptr", quietly = TRUE))
+        stop("method 'CRS2' needs the package 'nloptr'.", call. = FALSE)
+      r <- nloptr::nloptr(stats::runif(d), fn_u, lb = rep(0, d), ub = rep(1, d),
+                          opts = list(algorithm = "NLOPT_GN_CRS2_LM",
+                                      maxeval = ctrl$itermax * ctrl$NP,
+                                      population = ctrl$NP, xtol_rel = 0,
+                                      ftol_rel = 0, ftol_abs = 0))
+      list(theta = to_theta(r$solution), value = r$objective, trace = numeric(0),
+           pop = NULL, nfeval = r$iterations)
+    })
+  if (isTRUE(ctrl$polish > 0)) {
+    u0 <- (out$theta - lo) / rng
+    pl <- stats::optim(u0, fn_u, method = "Nelder-Mead",
+                       control = list(maxit = ctrl$polish, reltol = 0))
+    if (pl$value < out$value) {
+      out$theta <- to_theta(pl$par); out$value <- pl$value
+    }
+    out$nfeval <- out$nfeval + pl$counts[[1]]
+  }
+  out
+}
+
 # .fit_point
 #
 # One optimisation: z fixed (profile) or z in the parameter vector (joint,
@@ -118,17 +185,22 @@ print.funres_control <- function(x, ...) {
 .fit_point <- function(z, data_spp, T_exp, model, ctrl, bounds, H_ref,
                        z_free = FALSE, initialpop = NULL) {
   ptab <- .par_table(model, bounds, z_free)
+  # Common random numbers (optional): every evaluation during the search uses
+  # the same seed, which makes the objective deterministic in theta; the
+  # caller's random stream is restored after each evaluation.
+  crn_seed <- if (isTRUE(ctrl$crn)) sample.int(.Machine$integer.max, 1L) else NULL
   fn <- function(theta) {
+    if (!is.null(crn_seed)) {
+      old <- get(".Random.seed", envir = globalenv())
+      on.exit(assign(".Random.seed", old, envir = globalenv()))
+      set.seed(crn_seed)
+    }
     .nll_sim(.theta_to_nat(theta, ptab, model, z, H_ref, T_exp), model,
              data_spp, T_exp, ctrl$n_sim, ctrl$cut)
   }
-  res <- DEoptim(
-    fn = fn, lower = ptab$lower, upper = ptab$upper,
-    control = DEoptim.control(itermax = ctrl$itermax, NP = ctrl$NP,
-                              reltol = ctrl$reltol, steptol = ctrl$steptol,
-                              trace = FALSE, initialpop = initialpop))
+  res <- .optimise(fn, ptab, ctrl, initialpop)
 
-  theta <- res$optim$bestmem
+  theta <- res$theta
   names(theta) <- ptab$name
   par <- .theta_to_nat(theta, ptab, model, z, H_ref, T_exp)
   re <- lapply(seq_len(ctrl$n_reeval), function(i)
@@ -143,18 +215,18 @@ print.funres_control <- function(x, ...) {
   bound_side <- setNames(ifelse(at_lower, "lower", ifelse(at_upper, "upper", "")),
                          ptab$name)
 
-  tr <- res$member$bestvalit
-  it <- res$optim$iter
+  tr <- res$trace
+  it <- length(tr)
   late_gain <- if (it >= 4) tr[ceiling(0.75 * it)] - tr[it] else NA_real_
-  pop <- res$member$pop
+  pop <- res$pop
   spread <- if (!is.null(pop)) apply(pop, 2, stats::sd) / rng else rep(NA_real_, length(rng))
 
-  list(z = par[["z"]], par = par, theta = theta, nll_opt = res$optim$bestval,
+  list(z = par[["z"]], par = par, theta = theta, nll_opt = res$value,
        nll_reeval = mean(reevals),
        nll_reeval_se = if (length(reevals) > 1) stats::sd(reevals) / sqrt(length(reevals))
                        else NA_real_,
        n_floor = n_floor,
-       at_bound = at_bound, bound_side = bound_side, iter = it, nfeval = res$optim$nfeval,
+       at_bound = at_bound, bound_side = bound_side, iter = it, nfeval = res$nfeval,
        late_gain = late_gain, spread = setNames(spread, ptab$name), pop = pop)
 }
 
@@ -218,6 +290,46 @@ print.funres_control <- function(x, ...) {
                max_spread = suppressWarnings(max(p$spread, na.rm = TRUE)),
                stringsAsFactors = FALSE)
   }))
+}
+
+# Adaptive profile around a joint estimate: points at z_hat -/+ step, 2 step,
+# ... (the step doubles after every two points on a side) until the NLL
+# exceeds the minimum by more than the 95% threshold plus a margin, or the
+# bounds of z are reached. Both sides are evaluated together (parallel).
+.adaptive_profile <- function(joint, run, step, zb, include_one = TRUE,
+                              margin = 0.5, max_points = 40) {
+  prof <- joint
+  z0 <- joint$z
+  thr <- .umbral_ic95() + margin
+  sides <- list(low = list(open = TRUE, last = z0, step = step, n = 0),
+                high = list(open = TRUE, last = z0, step = step, n = 0))
+  first <- if (include_one && abs(z0 - 1) > 1e-8 && 1 > zb[1] && 1 < zb[2]) 1 else numeric(0)
+  while ((sides$low$open || sides$high$open) && nrow(prof) < max_points) {
+    zs <- first; first <- numeric(0)
+    for (nm in names(sides)) {
+      sd_ <- sides[[nm]]
+      if (!sd_$open) next
+      znew <- if (nm == "low") sd_$last - sd_$step else sd_$last + sd_$step
+      znew <- round(znew, 6)
+      if (nm == "low" && znew <= zb[1]) { znew <- zb[1]; sides[[nm]]$open <- FALSE }
+      if (nm == "high" && znew >= zb[2]) { znew <- zb[2]; sides[[nm]]$open <- FALSE }
+      sides[[nm]]$last <- znew
+      sides[[nm]]$n <- sd_$n + 1
+      if (sides[[nm]]$n %% 2 == 0) sides[[nm]]$step <- sd_$step * 2
+      zs <- c(zs, znew)
+    }
+    zs <- setdiff(zs, round(prof$z, 6))
+    if (length(zs)) prof <- rbind(prof, run(zs))
+    m <- min(prof$nll)
+    for (nm in names(sides)) {
+      zl <- sides[[nm]]$last
+      v <- prof$nll[which.min(abs(prof$z - zl))]
+      if (v - m > thr) sides[[nm]]$open <- FALSE
+    }
+  }
+  prof <- prof[order(prof$z), ]
+  rownames(prof) <- NULL
+  prof
 }
 
 # Widen the dimensionless bounds that were hit, by a factor of 10 on the
@@ -302,6 +414,14 @@ print.funres_control <- function(x, ...) {
 #' @param z_extend Extra values of z for `extend_z`.
 #' @param refine Add grid points inside brackets wider than the grid step
 #'   where the profile crosses the threshold.
+#' @param z_method `"profile"` (default): z is fixed at each value of
+#'   `z_grid` and the minimum of the profile is the estimate. `"joint"`: z is
+#'   estimated together with the other parameters, and the profile is then
+#'   computed only around the estimate, in steps of `z_step` (growing when the
+#'   profile is flat), until the 95% threshold is crossed on each side or the
+#'   search bounds of z are reached. The joint estimate is kept only if no
+#'   profile point has a lower NLL.
+#' @param z_step Initial step of the adaptive profile of the joint method.
 #' @param dens,response Names of the columns with host density and number of
 #'   hosts parasitized (prey consumed).
 #' @param time_unit Label of the time unit, used in printed output.
@@ -322,6 +442,7 @@ print.funres_control <- function(x, ...) {
 fit_funres <- function(data, T, model = funres_model(),
                        z_grid = seq(0.5, 5, by = 0.25), control = funres_control(),
                        extend_z = TRUE, z_extend = c(8, 10, 15, 20), refine = TRUE,
+                       z_method = c("profile", "joint"), z_step = 0.25,
                        dens = "dens", response = "par", time_unit = "time units") {
   cl <- match.call()
   if (!inherits(model, "funres_model")) stop("'model' must be a funres_model().", call. = FALSE)
@@ -351,7 +472,18 @@ fit_funres <- function(data, T, model = funres_model(),
 
   run <- function(zs) .points_to_df(do.call(.eval_profile_points,
                                             c(list(zs, model = model), args)))
-  prof <- run(z_grid)
+  z_method <- match.arg(z_method)
+  joint <- NULL
+  if (z_method == "joint" && !z_fixed) {
+    # z estimated with the other parameters; the profile is then computed
+    # only around the estimate, as far as needed to find the 95% limits.
+    joint <- .points_to_df(do.call(.eval_profile_points,
+                                   c(list(NA_real_, model = model, z_free = TRUE), args)))
+    prof <- .adaptive_profile(joint, run, z_step, bounds$z, include_one = TRUE)
+    extend_z <- FALSE
+  } else {
+    prof <- run(z_grid)
+  }
   ci <- if (!z_fixed && nrow(prof) > 1) .profile_ci(prof$z, prof$nll) else NULL
 
   extended <- FALSE
@@ -416,7 +548,8 @@ fit_funres <- function(data, T, model = funres_model(),
                      delta_AIC = aic_restricted - aic_full,
                      AIC_BB = aic_bb, delta_AIC_BB = aic_bb - aic_full),
     bb = bb,
-    extended = extended, refined = refined, widened = widened, seed = seed,
+    extended = extended, refined = refined, widened = widened, z_method = z_method,
+    joint = joint, seed = seed,
     version = as.character(utils::packageVersion("funresMech"))),
     class = "funres_fit")
   fit$notes <- .fit_notes(fit, i_best, z_extend)
