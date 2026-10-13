@@ -55,8 +55,12 @@
   lower <- c(log(1e-8), log(1e-6), if (is.null(z_fixed)) log(0.1), -14)
   upper <- c(log(1e4),  log(1),    if (is.null(z_fixed)) log(20),   7)
   fn <- function(th) .nll_bb_theta(th, data_spp, model$process, z_fixed)
-  de <- DEoptim(fn, lower, upper,
-                DEoptim.control(itermax = itermax, NP = NP, trace = FALSE))
+  de <- withCallingHandlers(
+    DEoptim(fn, lower, upper, DEoptim.control(itermax = itermax, NP = NP, trace = FALSE)),
+    warning = function(w) {
+      if (grepl("ten times the length of the parameter vector", conditionMessage(w)))
+        invokeRestart("muffleWarning")
+    })
   pol <- tryCatch(stats::optim(de$optim$bestmem, fn, method = "Nelder-Mead",
                                control = list(maxit = 5000, reltol = 1e-12)),
                   error = function(e) NULL)

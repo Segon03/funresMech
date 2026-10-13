@@ -133,10 +133,18 @@ print.funres_control <- function(x, ...) {
   fn_u <- function(u) if (any(u < 0 | u > 1)) 1e10 else fn(to_theta(u))
   out <- switch(ctrl$method,
     DEoptim = {
-      r <- DEoptim(fn = fn, lower = lo, upper = up,
-                   control = DEoptim.control(itermax = ctrl$itermax, NP = ctrl$NP,
-                                             reltol = ctrl$reltol, steptol = ctrl$steptol,
-                                             trace = FALSE, initialpop = initialpop))
+      # DEoptim advises NP >= 10 x number of parameters; the population is a
+      # setting of funres_control() (same budget for every method), so that
+      # advisory warning is muffled. Other warnings pass through.
+      r <- withCallingHandlers(
+        DEoptim(fn = fn, lower = lo, upper = up,
+                control = DEoptim.control(itermax = ctrl$itermax, NP = ctrl$NP,
+                                          reltol = ctrl$reltol, steptol = ctrl$steptol,
+                                          trace = FALSE, initialpop = initialpop)),
+        warning = function(w) {
+          if (grepl("ten times the length of the parameter vector", conditionMessage(w)))
+            invokeRestart("muffleWarning")
+        })
       list(theta = unname(r$optim$bestmem), value = r$optim$bestval,
            trace = r$member$bestvalit, pop = r$member$pop, nfeval = r$optim$nfeval)
     },
