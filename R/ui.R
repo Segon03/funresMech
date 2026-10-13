@@ -84,13 +84,22 @@ NULL
   selectInput(id, "Species or group", choices = character(0))
 }
 
+# Colour of the navigation bar: bslib >= 0.9.0 takes it through
+# navbar_options(); older versions through the bg / inverse arguments.
+.navbar_args <- function() {
+  if (utils::packageVersion("bslib") >= "0.9.0") {
+    list(navbar_options = bslib::navbar_options(bg = "#1C2B3A", theme = "dark"))
+  } else {
+    list(bg = "#1C2B3A", inverse = TRUE)
+  }
+}
+
 ui <- function() {
-  bslib::page_navbar(
+  do.call(bslib::page_navbar, c(.navbar_args(), list(
     title = span("funresMech", span(class = "brand-sub",
                                      "Mechanistic functional response, simulation-based likelihood")),
     id = "nav",
     theme = .app_bs_theme(),
-    bg = "#1C2B3A", inverse = TRUE,
     window_title = "funresMech",
     fillable = FALSE,
 
@@ -356,7 +365,7 @@ ui <- function() {
     bslib::nav_spacer(),
     bslib::nav_item(span(class = "small", style = "color:#AFC0CF;",
                          paste("version", utils::packageVersion("funresMech"))))
-  )
+  )))
 }
 
 .bound_inputs <- function(id, label, lo, hi) {
