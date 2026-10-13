@@ -112,3 +112,13 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
 * Pruebas: tests/testthat/test-app.R (testServer del flujo completo).
 * R CMD check (Linux): sin errores; la única advertencia es de la
   configuración regional del contenedor.
+
+## Piloto de costos (PC de 8 núcleos, 2026-10-13)
+
+* Una evaluación de la NLL cuesta ~0.09 s por cada 1000 simulaciones por
+  densidad (D3: 0.19 s con 2000; 0.92 s con 10000); lineal en n_sim.
+* Un punto del perfil: exploratory 6.5 min, standard ~31 min, final ~2 h
+  (un núcleo). CMA-ES y CRS2 cuestan lo mismo que DEoptim con igual
+  presupuesto de evaluaciones (346-413 s).
+* Decisión (D6): Fases 4 y 5 en la PC de 23-24 núcleos, hasta 4 días de
+  cómputo. Fase 4 (11_comparacion_optimizadores.R): ~7 h con 22 núcleos.
