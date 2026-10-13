@@ -241,7 +241,7 @@ print.funres_control <- function(x, ...) {
       f <- tryCatch(utils::getFromNamespace(".fit_point", "funresMech"),
                     error = function(e) NULL)
       if (is.null(f)) NA_character_ else paste(deparse(body(f)), collapse = "\n")
-    })),
+    }, seed = NULL)),   # seed = NULL: loading packages on the worker may draw random numbers
     error = function(e) NA_character_)
   isTRUE(identical(mine, theirs))
 }
