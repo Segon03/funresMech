@@ -68,3 +68,26 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
 * Perfil e IC sobre la media de las reevaluaciones (`nll`), con su error
   estándar (`nll_se`); el mínimo del optimizador queda como `nll_opt`
   (adelanto de la Fase 3.1).
+
+## Fases 2 a 4 (estado al 2026-10-13)
+
+* Fase 2: screening beta-binomial en unidades de T (invariante a la unidad);
+  ampliación automática de cotas tocadas en el óptimo (x10, hasta 2 veces);
+  DESCRIPTION y ayuda sin "Okuyama model"; versión 1.2.0.
+* Fase 3: `reliability()` (semáforo y acción por chequeo), `verify_fit()`
+  (corridas independientes, más esfuerzo, cotas más anchas), diagnóstico de
+  piso de probabilidad (`n_floor`), AIC frente a beta-binomial con la misma
+  media (parasitoide: Ecs. 1-2; depredador: ecuación del depredador aleatorio,
+  Script S2). El beta-binomial reproduce la NLL implícita en la Tabla S1 de
+  Okuyama (D3 132.68 vs 132.76; D2 169.46 vs 169.44).
+* Fase 4 (código): `z_method = "joint"` con perfil adaptativo; métodos
+  `DEoptim`, `CMAES`, `CRS2`; números aleatorios comunes (`crn`) y pulido
+  Nelder-Mead (`polish`). Falta la comparación (script en la PC del autor).
+* Umbrales de los chequeos: provisorios (`.rel_thresholds()`), a calibrar con
+  la validación ampliada (Fase 5).
+
+## Próximo paso en la PC del autor
+
+1. `devtools::install()` y `devtools::test()` en `funresMech_dev` (Windows).
+2. `source("validation/R/10_piloto_costos.R")` y enviar
+   `validation/tablas/piloto_costos.csv`.
