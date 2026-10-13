@@ -15,6 +15,7 @@ funres_control(
   method = "DEoptim",
   bounds = list(),
   widen = 2L,
+  bb = TRUE,
   cut = TRUE
 )
 }
@@ -48,6 +49,9 @@ See Details of \code{\link[=fit_funres]{fit_funres()}}.}
 \item{widen}{Maximum number of automatic widenings of a search bound on
 which the optimum ends (each widening multiplies the bound by 10 and
 refits the affected points of the profile). 0 disables it.}
+
+\item{bb}{Fit the reference Beta-Binomial model with the same expected
+value (Okuyama 2026) and report its AIC.}
 
 \item{cut}{Stop each simulated trial once all hosts have been attacked
 (exact; only saves time).}

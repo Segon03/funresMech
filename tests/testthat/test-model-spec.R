@@ -74,6 +74,8 @@ test_that("fit_funres() fits every family, fixed parameters and both processes",
     expect_true(all(is.finite(f$profile$nll)))
     expect_equal(f$n_par, funresMech:::.n_free(m))
     for (nm in names(m$fix)) expect_equal(coef(f)[[nm]], m$fix[[nm]])
+    expect_true(is.finite(f$aic$AIC_BB))
+    expect_equal(f$bb$n_par, if (is.null(m$fix$z)) 4 else 3)
     expect_output(print(f), "Estimates")
   }
 })
@@ -132,4 +134,50 @@ test_that("observed outcomes never simulated are counted and flagged", {
                              detail = TRUE)
   expect_equal(r$n_floor, 1L)                  # 10 of 10 is never simulated
   expect_gt(r$nll, 700)
+})
+
+test_that("reliability() and verify_fit() report the checks with a status", {
+  skip_on_cran()
+  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12, n_reeval = 3)
+  set.seed(7)
+  f <- suppressWarnings(fit_funres(datos, 24, z_grid = c(1, 2), control = ctrl,
+                                   extend_z = FALSE, refine = FALSE))
+  r <- reliability(f)
+  expect_s3_class(r, "funres_reliability")
+  expect_true(all(r$status %in% c("ok", "warning", "fail")))
+  expect_true("Settings suitable for reporting" %in% r$check)
+  expect_true(attr(r, "overall") %in% c("warning", "fail"))   # exploratory
+  set.seed(8)
+  v <- suppressWarnings(verify_fit(f, n_runs = 1, effort = 1.5))
+  rv <- reliability(v)
+  expect_true(all(c("Independent runs agree (NLL)", "More effort does not improve the optimum",
+                    "Wider bounds do not improve the optimum") %in% rv$check))
+  expect_length(v$verification_runs, 3)
+  expect_output(print(rv), "Reliability of the fit")
+  expect_output(print(v), "Reliability:")
+})
+
+test_that("predator mean equals the random predator equation and the ODE", {
+  a <- 0.3; h <- 0.02; x <- c(5, 20, 100)
+  ne <- funresMech:::.mu_predator(x, a, h, 1, 1)
+  expect_equal(ne, x * (1 - exp(a * (h * ne - 1))), tolerance = 1e-8)   # Rogers
+  ode <- function(H0, a, h, z, T, n = 1e5) {
+    H <- H0; dt <- T / n
+    for (i in seq_len(n)) H <- H - dt * a * H^z / (1 + a * h * H^z)
+    H0 - H
+  }
+  expect_equal(funresMech:::.mu_predator(20, 0.01, 0.05, 2, 1), ode(20, 0.01, 0.05, 2, 1),
+               tolerance = 1e-4)
+})
+
+test_that("Beta-Binomial reference reproduces the NLL implied by Okuyama (2026, Table S1)", {
+  skip_on_cran()
+  # AIC(BB) = AIC(mech) + Delta: D3 272.890 + 0.62; D2 336.589 + 10.3 (4 parameters)
+  for (cs in list(list(f = "D3.csv", nll = (272.890 + 0.62 - 8) / 2),
+                  list(f = "D2.csv", nll = (336.589 + 10.3 - 8) / 2))) {
+    d <- read.csv(test_path("fixtures", cs$f))
+    set.seed(1)
+    b <- funresMech:::.fit_bb_model(d, funres_model())
+    expect_lt(abs(b$nll - cs$nll), 0.15)
+  }
 })

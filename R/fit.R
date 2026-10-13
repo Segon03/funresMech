@@ -45,6 +45,8 @@ NULL
 #' @param widen Maximum number of automatic widenings of a search bound on
 #'   which the optimum ends (each widening multiplies the bound by 10 and
 #'   refits the affected points of the profile). 0 disables it.
+#' @param bb Fit the reference Beta-Binomial model with the same expected
+#'   value (Okuyama 2026) and report its AIC.
 #' @param cut Stop each simulated trial once all hosts have been attacked
 #'   (exact; only saves time).
 #' @return An object of class `funres_control`.
@@ -56,7 +58,7 @@ NULL
 funres_control <- function(preset = c("standard", "exploratory", "final"),
                            n_sim, itermax, NP, reltol, steptol, n_reeval,
                            method = "DEoptim", bounds = list(), widen = 2L,
-                           cut = TRUE) {
+                           bb = TRUE, cut = TRUE) {
   preset <- match.arg(preset)
   p <- switch(preset,
               exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
@@ -74,7 +76,7 @@ funres_control <- function(preset = c("standard", "exploratory", "final"),
   if (p$n_reeval < 1) stop("n_reeval must be >= 1.", call. = FALSE)
   structure(c(list(preset = preset), p,
               list(method = method, bounds = bounds, widen = as.integer(widen),
-                   cut = isTRUE(cut))),
+                   bb = isTRUE(bb), cut = isTRUE(cut))),
             class = "funres_control")
 }
 
@@ -401,13 +403,19 @@ fit_funres <- function(data, T, model = funres_model(),
   nll_1 <- if (!z_fixed) .nll_at_z(prof$z, prof$nll, 1) else NA_real_
   aic_restricted <- if (is.na(nll_1)) NA_real_ else 2 * nll_1 + 2 * (n_free - 1)
 
+  bb <- if (isTRUE(control$bb)) tryCatch(.fit_bb_model(data_spp, model),
+                                          error = function(e) NULL) else NULL
+  aic_bb <- if (is.null(bb)) NA_real_ else 2 * bb$nll + 2 * bb$n_par
+
   fit <- structure(list(
     call = cl, model = model, control = control, data = data_spp, T = T,
     time_unit = time_unit, H_ref = H_ref, bounds = bounds, profile = prof,
     par = par, nll = prof$nll[i_best], nll_se = prof$nll_se[i_best],
     n_par = n_free, ci = ci,
     aic = data.frame(AIC_full = aic_full, AIC_restricted = aic_restricted,
-                     delta_AIC = aic_restricted - aic_full),
+                     delta_AIC = aic_restricted - aic_full,
+                     AIC_BB = aic_bb, delta_AIC_BB = aic_bb - aic_full),
+    bb = bb,
     extended = extended, refined = refined, widened = widened, seed = seed,
     version = as.character(utils::packageVersion("funresMech"))),
     class = "funres_fit")
@@ -491,10 +499,16 @@ print.funres_fit <- function(x, digits = 4, ...) {
               x$nll, x$nll_se, x$n_par, x$aic$AIC_full))
   if (!is.na(x$aic$delta_AIC))
     cat(sprintf("AIC(z = 1) - AIC(z free) = %.2f\n", x$aic$delta_AIC))
-  if (length(x$notes)) {
-    cat("\nNotes:\n")
-    for (n in x$notes) cat(" * ", strwrap(n, exdent = 3, width = 76), sep = "\n")
-  }
+  if (!is.na(x$aic$delta_AIC_BB))
+    cat(sprintf("AIC(Beta-Binomial, same mean) - AIC(mechanistic) = %.2f (positive favours the mechanistic model)\n",
+                x$aic$delta_AIC_BB))
+  rel <- reliability(x)
+  cat("\nReliability: ", toupper(attr(rel, "overall")),
+      if (is.null(x$verification)) " (cheap checks only; run verify_fit() before reporting)",
+      ". See reliability().\n", sep = "")
+  bad <- rel[rel$status != "ok", , drop = FALSE]
+  for (j in seq_len(nrow(bad)))
+    cat(" * [", bad$status[j], "] ", bad$check[j], ": ", bad$detail[j], "\n", sep = "")
   invisible(x)
 }
 
