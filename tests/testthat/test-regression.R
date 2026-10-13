@@ -40,6 +40,9 @@ test_that("simulated likelihood reproduces the NLL of 1.1.0 exactly", {
     nll <- funresMech:::negloglik_fixed_z(cs$par, z_fixed = cs$z, data_spp = d,
                                           T = golden$T_exp, n_sim = cs$n_sim,
                                           corte_saturacion = cs$cut)
-    expect_identical(nll, cs$nll)
+    # Integer counts are compared exactly above; the NLL is a sum of logs and
+    # may differ in the last bits between compilers/math libraries (Windows
+    # vs Linux), hence the tiny tolerance.
+    expect_equal(nll, cs$nll, tolerance = 1e-10)
   }
 })
