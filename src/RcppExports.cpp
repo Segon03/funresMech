@@ -10,6 +10,47 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// draw_times_cpp
+NumericVector draw_times_cpp(int n, bool search, int family, double mean, double disp, SEXP fun);
+RcppExport SEXP _funresMech_draw_times_cpp(SEXP nSEXP, SEXP searchSEXP, SEXP familySEXP, SEXP meanSEXP, SEXP dispSEXP, SEXP funSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    Rcpp::traits::input_parameter< bool >::type search(searchSEXP);
+    Rcpp::traits::input_parameter< int >::type family(familySEXP);
+    Rcpp::traits::input_parameter< double >::type mean(meanSEXP);
+    Rcpp::traits::input_parameter< double >::type disp(dispSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type fun(funSEXP);
+    rcpp_result_gen = Rcpp::wrap(draw_times_cpp(n, search, family, mean, disp, fun));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sim_trials_cpp
+IntegerVector sim_trials_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, int search_family, int handling_family, bool predator, bool cut, SEXP search_fun, SEXP handling_fun, bool force_general);
+RcppExport SEXP _funresMech_sim_trials_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP search_familySEXP, SEXP handling_familySEXP, SEXP predatorSEXP, SEXP cutSEXP, SEXP search_funSEXP, SEXP handling_funSEXP, SEXP force_generalSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type H(HSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type h(hSEXP);
+    Rcpp::traits::input_parameter< double >::type z(zSEXP);
+    Rcpp::traits::input_parameter< double >::type k(kSEXP);
+    Rcpp::traits::input_parameter< double >::type s(sSEXP);
+    Rcpp::traits::input_parameter< double >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
+    Rcpp::traits::input_parameter< int >::type search_family(search_familySEXP);
+    Rcpp::traits::input_parameter< int >::type handling_family(handling_familySEXP);
+    Rcpp::traits::input_parameter< bool >::type predator(predatorSEXP);
+    Rcpp::traits::input_parameter< bool >::type cut(cutSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type search_fun(search_funSEXP);
+    Rcpp::traits::input_parameter< SEXP >::type handling_fun(handling_funSEXP);
+    Rcpp::traits::input_parameter< bool >::type force_general(force_generalSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_trials_cpp(H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general));
+    return rcpp_result_gen;
+END_RCPP
+}
 // motor_okuyama_cpp
 IntegerVector motor_okuyama_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, bool corte_saturacion);
 RcppExport SEXP _funresMech_motor_okuyama_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP corte_saturacionSEXP) {
@@ -49,10 +90,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// example_cpp_sampler
+SEXP example_cpp_sampler();
+RcppExport SEXP _funresMech_example_cpp_sampler() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(example_cpp_sampler());
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_funresMech_draw_times_cpp", (DL_FUNC) &_funresMech_draw_times_cpp, 6},
+    {"_funresMech_sim_trials_cpp", (DL_FUNC) &_funresMech_sim_trials_cpp, 15},
     {"_funresMech_motor_okuyama_cpp", (DL_FUNC) &_funresMech_motor_okuyama_cpp, 9},
     {"_funresMech_contar_vueltas_cpp", (DL_FUNC) &_funresMech_contar_vueltas_cpp, 10},
+    {"_funresMech_example_cpp_sampler", (DL_FUNC) &_funresMech_example_cpp_sampler, 0},
     {NULL, NULL, 0}
 };
 
