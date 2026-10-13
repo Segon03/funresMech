@@ -219,3 +219,18 @@ test_that("alternative optimisers, common random numbers and polish run", {
   set.seed(12); f2 <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
   expect_identical(f1$profile, f2$profile)
 })
+
+test_that("a jagged profile (extra local minima) fails the regularity check", {
+  skip_on_cran()
+  ctrl <- funres_control("exploratory", n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
+  set.seed(1)
+  f <- suppressWarnings(fit_funres(datos, 24, z_grid = c(1, 2), control = ctrl,
+                                   extend_z = FALSE, refine = FALSE))
+  f$profile <- f$profile[c(1, 2, 1, 2, 1), ]
+  f$profile$z <- 1:5
+  f$profile$nll <- c(20, 10, 18, 5, 15)          # minima at z = 2 and z = 4
+  f$profile$nll_se <- 0.1
+  r <- reliability(f)
+  expect_equal(r$status[r$check == "Profile of z regular (one minimum)"], "fail")
+  expect_match(r$detail[r$check == "Profile of z regular (one minimum)"], "z = 2")
+})

@@ -17,7 +17,8 @@ fit_funres(
   z_step = 0.25,
   dens = "dens",
   response = "par",
-  time_unit = "time units"
+  time_unit = "time units",
+  progress = NULL
 )
 }
 \arguments{
@@ -54,6 +55,9 @@ profile point has a lower NLL.}
 hosts parasitized (prey consumed).}
 
 \item{time_unit}{Label of the time unit, used in printed output.}
+
+\item{progress}{Optional function called with the value of z after each
+point of the profile is fitted (used by the shiny application).}
 }
 \value{
 An object of class \code{funres_fit}.

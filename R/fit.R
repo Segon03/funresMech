@@ -211,8 +211,8 @@ print.funres_control <- function(x, ...) {
   rng <- ptab$upper - ptab$lower
   at_lower <- (theta <= ptab$lower + 0.01 * rng) & !ptab$natural_lower
   at_upper <- theta >= ptab$upper - 0.01 * rng
-  at_bound <- setNames(at_lower | at_upper, ptab$name)
-  bound_side <- setNames(ifelse(at_lower, "lower", ifelse(at_upper, "upper", "")),
+  at_bound <- stats::setNames(at_lower | at_upper, ptab$name)
+  bound_side <- stats::setNames(ifelse(at_lower, "lower", ifelse(at_upper, "upper", "")),
                          ptab$name)
 
   tr <- res$trace
@@ -227,7 +227,7 @@ print.funres_control <- function(x, ...) {
                        else NA_real_,
        n_floor = n_floor,
        at_bound = at_bound, bound_side = bound_side, iter = it, nfeval = res$nfeval,
-       late_gain = late_gain, spread = setNames(spread, ptab$name), pop = pop)
+       late_gain = late_gain, spread = stats::setNames(spread, ptab$name), pop = pop)
 }
 
 # TRUE when the current future plan can run this package's code: either the
@@ -256,7 +256,7 @@ print.funres_control <- function(x, ...) {
 # reproducible. Falls back to a sequential plan when the workers cannot run
 # this version of the package or when a C++ sampler is used (external
 # pointers cannot be sent to other R processes).
-.eval_profile_points <- function(zs, model, ...) {
+.eval_profile_points <- function(zs, model, ..., progress = NULL) {
   seq_reason <- NULL
   if (!inherits(future::plan(), "sequential")) {
     if (.uses_cpp_sampler(model)) {
@@ -274,7 +274,12 @@ print.funres_control <- function(x, ...) {
   fs <- lapply(zs, function(z)
     future(utils::getFromNamespace(".fit_point", "funresMech")(z, model = model, ...),
            seed = TRUE))
-  lapply(fs, value)
+  out <- vector("list", length(fs))
+  for (j in seq_along(fs)) {
+    out[[j]] <- value(fs[[j]])
+    if (is.function(progress)) progress(zs[j])
+  }
+  out
 }
 
 .points_to_df <- function(pts) {
@@ -425,6 +430,8 @@ print.funres_control <- function(x, ...) {
 #' @param dens,response Names of the columns with host density and number of
 #'   hosts parasitized (prey consumed).
 #' @param time_unit Label of the time unit, used in printed output.
+#' @param progress Optional function called with the value of z after each
+#'   point of the profile is fitted (used by the shiny application).
 #' @return An object of class `funres_fit`.
 #' @seealso [funres_model()], [funres_control()], [simulate_response()]
 #' @examples
@@ -443,7 +450,8 @@ fit_funres <- function(data, T, model = funres_model(),
                        z_grid = seq(0.5, 5, by = 0.25), control = funres_control(),
                        extend_z = TRUE, z_extend = c(8, 10, 15, 20), refine = TRUE,
                        z_method = c("profile", "joint"), z_step = 0.25,
-                       dens = "dens", response = "par", time_unit = "time units") {
+                       dens = "dens", response = "par", time_unit = "time units",
+                       progress = NULL) {
   cl <- match.call()
   if (!inherits(model, "funres_model")) stop("'model' must be a funres_model().", call. = FALSE)
   if (!inherits(control, "funres_control")) stop("'control' must be a funres_control().", call. = FALSE)
@@ -471,14 +479,15 @@ fit_funres <- function(data, T, model = funres_model(),
   step0 <- if (length(z_grid) > 1) stats::median(diff(z_grid)) else 1
 
   run <- function(zs) .points_to_df(do.call(.eval_profile_points,
-                                            c(list(zs, model = model), args)))
+                                            c(list(zs, model = model, progress = progress), args)))
   z_method <- match.arg(z_method)
   joint <- NULL
   if (z_method == "joint" && !z_fixed) {
     # z estimated with the other parameters; the profile is then computed
     # only around the estimate, as far as needed to find the 95% limits.
     joint <- .points_to_df(do.call(.eval_profile_points,
-                                   c(list(NA_real_, model = model, z_free = TRUE), args)))
+                                   c(list(NA_real_, model = model, z_free = TRUE,
+                                          progress = progress), args)))
     prof <- .adaptive_profile(joint, run, z_step, bounds$z, include_one = TRUE)
     extend_z <- FALSE
   } else {

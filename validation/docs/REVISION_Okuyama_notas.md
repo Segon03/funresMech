@@ -91,3 +91,24 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
 1. `devtools::install()` y `devtools::test()` en `funresMech_dev` (Windows).
 2. `source("validation/R/10_piloto_costos.R")` y enviar
    `validation/tablas/piloto_costos.csv`.
+
+## Fase 6: interfaz Shiny (2026-10-13)
+
+* Reescrita con bslib (Bootstrap 5); se quitan shinythemes, shinyBS, dplyr,
+  magrittr y kableExtra. Tema sobrio (azul pizarra #1C2B3A, acento #1F5F8B,
+  estados verde/ocre/rojo apagados), fuente del sistema a 14 px.
+* Pestañas: Data (mapeo de columnas, grupos, screening con fila del archivo),
+  Model and fit (unidad de tiempo, proceso, familias de búsqueda y
+  manipulación, muestreadores propios en R con prueba, k/s/z fijos, z por
+  perfil/conjunto/fijo, presets, método, crn, pulido, semilla, paralelo,
+  cotas por defecto en unidades del usuario o propias, estimación del tiempo),
+  Reliability (franja de estado, chequeos con acción, verificación), Results
+  (estimaciones con unidades, IC de z, AIC vs z = 1 y vs beta-binomial,
+  perfil con error MC, respuesta simulada, distribuciones; figuras PDF/PNG),
+  Model comparison (tabla de AIC entre especificaciones, aviso si difieren los
+  ensayos), Export (CSV, RDS, script R reproducible, reporte HTML), Help.
+* El script R y el reporte usan la configuración con que se hizo el ajuste.
+* Chequeo nuevo: perfil de z irregular (mínimos locales adicionales) = falla.
+* Pruebas: tests/testthat/test-app.R (testServer del flujo completo).
+* R CMD check (Linux): sin errores; la única advertencia es de la
+  configuración regional del contenedor.

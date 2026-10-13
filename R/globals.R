@@ -8,6 +8,7 @@ utils::globalVariables(c(
   "paras",
   "dens_species",
   "dens_offset",
-  "group_id"
+  "group_id",
+  "density"
 ))
 

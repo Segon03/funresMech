@@ -1,19 +1,24 @@
 #' Run the funresMech Shiny App
 #'
 #' Launches the interactive application for mechanistic functional response
-#' analysis, based on the Okuyama model.
+#' analysis by simulation-based likelihood.
 #'
 #' @details
-#' The application fits the model to a table with one row per trial (species,
-#' host density and number of parasitised hosts) and offers the following
-#' tabs: fitted parameters, likelihood profile of the density-scaling exponent
-#' `z` with its 95% interval, stochastic curves and distributions, diagnostics
-#' (small `k`, parameters on a bound, open intervals), screening of atypical
-#' trials, and an HTML report. The parameter `s` is the standard deviation of
-#' the handling time on the natural scale (same units as `h`).
+#' The application covers the whole analysis: loading data with one row per
+#' trial (and an optional species or group column) and screening atypical
+#' trials; specifying the foraging model (parasitoid or predator process,
+#' distributions of search and handling times, including samplers written in
+#' R, fixed parameters, profile, joint or fixed estimation of `z`, optimiser,
+#' Monte Carlo effort and search bounds); fitting with an estimate of the run
+#' time; checking and verifying the reliability of each fit; results
+#' (estimates, interval of `z`, AIC against `z = 1` and against a
+#' Beta-Binomial model, likelihood profile, simulated response and
+#' distributions); comparing alternative models by AIC; and exporting tables,
+#' fitted objects, an R script that repeats the analysis and an HTML report.
 #'
-#' The profile is computed in parallel with the 'future' package, so results
-#' are reproducible with [set.seed()] before launching the app.
+#' Results are reproducible: the seed is set in the application. Samplers
+#' written in C++ are available from R code ([funres_sampler()]), not from the
+#' application.
 #'
 #' @references
 #' Okuyama, T. (2012). A likelihood approach for functional response models.
@@ -37,6 +42,6 @@
 #' @import shiny
 run_app <- function(...) {
   # Cargar los componentes UI y server
-  app <- shiny::shinyApp(ui = ui, server = server)
+  app <- shiny::shinyApp(ui = ui(), server = server)
   shiny::runApp(app, ...)
 }

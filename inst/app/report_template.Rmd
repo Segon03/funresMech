@@ -1,379 +1,144 @@
 ---
-title: "Okuyama Mechanistic Model Report"
-subtitle: "Mechanistic Functional Response Analysis"
-date: "`r format(Sys.time(), '%B %d, %Y')`"
+title: "Mechanistic functional response analysis"
+subtitle: "funresMech, simulation-based likelihood"
+date: "`r format(Sys.time(), '%Y-%m-%d %H:%M')`"
 output:
   html_document:
     toc: true
-    toc_depth: 3
-    number_sections: true
-  pdf_document:
-    toc: true
-    toc_depth: 3
-    number_sections: true
-    keep_tex: false
-header-includes:
-  - \usepackage[utf8]{inputenc}
-  - \usepackage[T1]{fontenc}
-  - \usepackage{float}
+    toc_depth: 2
+    theme: null
+    highlight: null
+    css: null
 params:
-  DATASET: NULL
-  PARAMS_ALL: NULL
-  PROFILES_ALL: NULL
-  CURVE_ALL: NULL
-  HIST_ALL: NULL
-  AIC_TABLE: NULL
-  Z_CI: NULL
-  DIAG: NULL
-  SCREEN: NULL
-  REPORT_ELEMENTS: NULL
-  INCLUDE_DATASET: FALSE
-  T_EXP: NULL
-  ITERMAX: NULL
-  NP: NULL
-  RELTOL: NULL
-  N_SIM: NULL
-  Z_MIN: NULL
-  Z_MAX: NULL
-  Z_STEP: NULL
-  CORES: NULL
+  fits: NULL
+  sims: NULL
+  comparison: NULL
+  screen: NULL
+  include_data: FALSE
+  script: NULL
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-library(ggplot2)
-library(dplyr)
-library(knitr)
-
-# kableExtra es un paquete en Suggests: las secciones que dependen de el
-# se saltean (eval = FALSE) si no esta instalado, en vez de fallar.
-tiene_kableExtra <- requireNamespace("kableExtra", quietly = TRUE)
-
-# Fallback para params
-if (!exists("params")) {
-  params <- list(
-    DATASET = NULL,
-    PARAMS_ALL = NULL,
-    PROFILES_ALL = NULL,
-    CURVE_ALL = NULL,
-    HIST_ALL = NULL,
-    AIC_TABLE = NULL,
-    Z_CI = NULL,
-    DIAG = NULL,
-    SCREEN = NULL,
-    REPORT_ELEMENTS = NULL,
-    INCLUDE_DATASET = FALSE
-  )
-}
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      fig.width = 7, fig.height = 4.2, dpi = 110)
+ns <- asNamespace("funresMech")
+fits <- params$fits
 ```
 
-# Cover Page
-
-```{r cover, results='asis', echo=FALSE}
-if (knitr::is_latex_output()) {
-  cat('
-\\begin{center}
-{\\huge \\bfseries Okuyama Mechanistic Model Report} \\\\[0.5cm]
-{\\large Mechanistic Functional Response Analysis} \\\\[1cm]
-{\\large \\textbf{Date:}', format(Sys.time(), '%B %d, %Y'), '} \\\\
-{\\large \\textbf{Model:} Okuyama (2012), Biological Control DOI <10.1016/j.biocontrol.2011.10.008>}
-\\end{center}
-\\vspace{1cm}
-\\hrule
-\\vspace{0.5cm}
-')
-} else {
-  cat('<div style="padding:20px; border:2px solid #333; border-radius:10px; background:#f7f7f7;">
-<h2>Okuyama Mechanistic Model Report</h2>
-<h4>Mechanistic Functional Response Analysis</h4>
-<p><strong>Date:</strong>', format(Sys.time(), '%B %d, %Y'), '</p>
-<p><strong>Model:</strong> Okuyama (2012), Biological Control DOI <10.1016/j.biocontrol.2011.10.008</p>
-</div>')
-}
+```{css, echo = FALSE}
+body { font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+       font-size: 14px; color: #1C2B3A; max-width: 920px; margin: 2rem auto; padding: 0 1rem;
+       line-height: 1.5; }
+h1.title { font-size: 1.5rem; margin-bottom: 0.2rem; }
+h3.subtitle { font-size: 1rem; font-weight: 400; color: #4A5A6A; margin-top: 0; }
+h1 { font-size: 1.25rem; border-bottom: 1px solid #E3E8ED; padding-bottom: 0.2rem; margin-top: 2rem; }
+h2 { font-size: 1.05rem; margin-top: 1.4rem; }
+table { border-collapse: collapse; font-size: 13px; margin: 0.6rem 0; font-variant-numeric: tabular-nums; }
+th { background: #F4F6F8; text-align: left; }
+th, td { border-bottom: 1px solid #E3E8ED; padding: 0.25rem 0.6rem; }
+.status-ok { color: #2E6F57; font-weight: 600; } .status-warning { color: #9A6B12; font-weight: 600; }
+.status-fail { color: #9E3B3B; font-weight: 600; }
+pre { background: #F4F6F8; padding: 0.7rem; font-size: 12px; overflow-x: auto; }
+#TOC { font-size: 13px; }
 ```
 
-# Dataset (optional)
+# Summary
 
-```{r dataset, eval=tiene_kableExtra}
-if (isTRUE(params$INCLUDE_DATASET) && !is.null(params$DATASET)) {
-  kable(head(params$DATASET), caption = "First rows of the dataset used in the analysis") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
+```{r summary-table}
+st <- function(x) sprintf('<span class="status-%s">%s</span>', x, x)
+tab <- do.call(rbind, lapply(names(fits), function(sp) {
+  f <- fits[[sp]]
+  data.frame(Group = sp, Trials = nrow(f$data), z = signif(f$par[["z"]], 3),
+             `95% interval of z` = ns$.interval_text(f), AIC = round(f$aic$AIC_full, 2),
+             Reliability = st(attr(funresMech::reliability(f), "overall")),
+             Verified = if (is.null(f$verification)) "no" else "yes", check.names = FALSE)
+}))
+knitr::kable(tab, format = "html", escape = FALSE)
 ```
 
-# Summary Statistics
-
-```{r summary, eval=tiene_kableExtra}
-if (!is.null(params$DATASET)) {
-  df <- params$DATASET
-
-  summary_table <- df %>%
-    group_by(species) %>%
-    summarise(
-      n = n(),
-      mean_dens = mean(dens),
-      mean_par = mean(par),
-      sd_par = sd(par),
-      min_par = min(par),
-      max_par = max(par),
-      .groups = "drop"
-    )
-
-  kable(summary_table, caption = "Summary statistics by species") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
+```{r unverified, results = "asis"}
+if (any(tab$Verified == "no") || any(grepl("fail|warning", tab$Reliability)))
+  cat("<p><strong>Note.</strong> Fits that are not verified, or whose reliability checks gave warnings or failures, should not be reported without acting on the checks listed below.</p>")
 ```
 
-# Fitted Parameters
+# Model and settings
 
-```{r params, eval=tiene_kableExtra}
-if (!is.null(params$PARAMS_ALL) && "params" %in% params$REPORT_ELEMENTS) {
-  kable(params$PARAMS_ALL, caption = "Fitted parameters for each species") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
+```{r model, results = "asis"}
+f1 <- fits[[1]]
+m <- f1$model; ctl <- f1$control
+spec <- data.frame(
+  Item = c("Process", "Search times", "Handling times", "Fixed parameters", "Estimation of z",
+           "Trial duration", "Optimiser", "Simulated trials per density", "Generations x population",
+           "Re-evaluations at each optimum", "funresMech version"),
+  Value = c(m$process, paste0(m$search$name, ", mean 1/(a x^z)"), paste0(m$handling$name, ", mean h"),
+            if (length(m$fix)) paste(names(m$fix), unlist(m$fix), sep = " = ", collapse = ", ") else "none",
+            if (!is.null(m$fix$z)) "fixed" else f1$z_method,
+            paste(f1$T, f1$time_unit), ctl$method, ctl$n_sim, paste(ctl$itermax, "x", ctl$NP),
+            ctl$n_reeval, f1$version))
+knitr::kable(spec, format = "html")
 ```
 
-# Interpretation of Parameters
-
-```{r interpretation, eval=tiene_kableExtra}
-if (!is.null(params$PARAMS_ALL)) {
-
-  interpret <- function(a, h, z, k, s) {
-    out <- c()
-
-    if (z < 1) out <- c(out, "Sublinear response: weak acceleration with density.")
-    if (z >= 1 && z < 1.2) out <- c(out, "Approximately Type II response.")
-    if (z >= 1.2) out <- c(out, "Type III-like response: strong acceleration at low density.")
-
-    if (h < 0.05) out <- c(out, "Very fast handling time.")
-    if (h >= 0.05 && h < 0.15) out <- c(out, "Moderate handling time.")
-    if (h >= 0.15) out <- c(out, "Slow handling time: strong saturation.")
-
-    # s is the sd of handling time on the natural scale: judge it by CV = s / h
-    if (h > 0 && s / h > 0.5) out <- c(out, "High variability in handling time.")
-    if (k < 1) out <- c(out, "High variability in search time.")
-
-    paste(out, collapse = " ")
+```{r per-species, results = "asis"}
+for (sp in names(fits)) {
+  f <- fits[[sp]]
+  cat("\n\n# ", sp, "\n\n", sep = "")
+  cat("## Estimates\n\n")
+  print(knitr::kable(ns$.estimates_table(f), format = "html"))
+  cat("\n\n95% interval of z: ", ns$.interval_text(f), ". NLL ", sprintf("%.3f", f$nll),
+      " (Monte Carlo SE ", sprintf("%.3f", f$nll_se), ").\n\n", sep = "")
+  cat("## AIC\n\n")
+  a <- ns$.aic_table(f); a$AIC <- round(a$AIC, 2); a[[4]] <- round(a[[4]], 2)
+  print(knitr::kable(a, format = "html"))
+  cat("\n\n## Reliability\n\n")
+  r <- as.data.frame(funresMech::reliability(f))
+  r$status <- sprintf('<span class="status-%s">%s</span>', r$status, r$status)
+  print(knitr::kable(r[, c("status", "check", "detail", "action")], format = "html", escape = FALSE))
+  cat("\n\n## Likelihood profile of z\n\n")
+  print(ns$.plot_profile(f))
+  if (!is.null(params$sims[[sp]])) {
+    cat("\n\n## Functional response\n\n")
+    print(ns$.plot_response(f, params$sims[[sp]]))
   }
-
-  interp_table <- params$PARAMS_ALL %>%
-    rowwise() %>%
-    mutate(interpretation = interpret(a, h, z, k, s)) %>%
-    ungroup()
-
-  kable(interp_table, caption = "Automatic interpretation of fitted parameters") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
-```
-
-# Confidence Intervals for z (Profile Likelihood)
-
-```{r z_ci, eval=tiene_kableExtra}
-if (!is.null(params$Z_CI)) {
-  kable(params$Z_CI, caption = "95% confidence intervals for z (profile likelihood, NLL <= minimum + 1.92). An open limit means that z is not identified on that side.") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
-```
-
-# Diagnostics
-
-```{r diagnostics, eval=tiene_kableExtra}
-if (!is.null(params$DIAG)) {
-  kable(params$DIAG, caption = "Fit diagnostics by species") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-}
-if (!is.null(params$SCREEN)) {
-  scr <- params$SCREEN[params$SCREEN$flagged | params$SCREEN$influences_dispersion, , drop = FALSE]
-  if (nrow(scr) > 0) {
-    kable(scr[, c("species", "row", "dens", "par", "expected_loo", "p_loo",
-                  "rho_change", "flagged")],
-          caption = "Trials flagged by the screening for atypical observations (data were not removed)") %>%
-      kableExtra::kable_styling(latex_options = "hold_position")
+  if (isTRUE(params$include_data)) {
+    cat("\n\n## Data\n\n")
+    print(knitr::kable(f$data, format = "html", col.names = c("Density", "Response")))
   }
 }
 ```
 
-# Model Comparison (AIC)
-
-```{r aic, eval=tiene_kableExtra}
-if (!is.null(params$AIC_TABLE)) {
-  # Añadir columna de interpretación de delta AIC
-  aic_table <- params$AIC_TABLE %>%
-    mutate(
-      support = case_when(
-        is.na(delta_AIC) ~ "Not computed",
-        delta_AIC > 10   ~ "Strong support for full model (z free)",
-        delta_AIC > 2    ~ "Moderate support for full model",
-        delta_AIC >= -2  ~ "Equivalent support",
-        delta_AIC < -2   ~ "Support for restricted model (z=1)"
-      )
-    )
-  kable(aic_table, caption = "AIC comparison between full model (z free) and restricted model (z=1)") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
+```{r screening, results = "asis"}
+if (!is.null(params$screen)) {
+  s <- params$screen[params$screen$flagged | params$screen$influences_dispersion, , drop = FALSE]
+  cat("\n\n# Atypical trials\n\n")
+  if (nrow(s)) {
+    print(knitr::kable(data.frame(Group = s$species, `File row` = s$file_row, Density = s$dens,
+                                  Response = s$par, `LOO probability` = signif(s$p_loo, 2),
+                                  Flagged = s$flagged, check.names = FALSE), format = "html"))
+  } else cat("No trial was flagged.\n")
 }
 ```
 
-# Likelihood Profile for z
-
-```{r profile}
-if (!is.null(params$PROFILES_ALL) && "profile" %in% params$REPORT_ELEMENTS) {
-  p_prof <- ggplot(params$PROFILES_ALL, aes(x = z, y = nll, color = species)) +
-    geom_line(size = 1) +
-    theme_bw() +
-    labs(title = "Likelihood profile for z",
-         x = "z",
-         y = "Negative log-likelihood")
-  print(p_prof)
+```{r comparison, results = "asis"}
+if (!is.null(params$comparison)) {
+  cat("\n\n# Model comparison\n\n")
+  print(knitr::kable(params$comparison, format = "html"))
 }
 ```
 
-# Stochastic Mechanistic Curve
+# Reproducibility
 
-```{r curve}
-if (!is.null(params$CURVE_ALL) && "curve" %in% params$REPORT_ELEMENTS) {
-  p_curve <- ggplot(params$CURVE_ALL, aes(x = dens, y = mean, color = species)) +
-    geom_line(size = 1) +
-    geom_ribbon(aes(ymin = lower, ymax = upper, fill = species),
-                alpha = 0.25, color = NA) +
-    theme_bw() +
-    labs(title = "Stochastic mechanistic curve",
-         x = "Host density",
-         y = "Parasitized hosts")
-  print(p_curve)
-}
+The analysis can be repeated with the following R script.
+
+```{r script, results = "asis"}
+cat("<pre>", paste(htmltools::htmlEscape(params$script), collapse = "\n"), "</pre>")
 ```
 
-# Distribution Plots
+# References
 
-## Histograms
+Okuyama T (2012) A likelihood approach for functional response models. Biological Control 60: 103-107. doi:10.1016/j.biocontrol.2011.10.008
 
-```{r hist}
-if (!is.null(params$HIST_ALL) && "hist" %in% params$REPORT_ELEMENTS) {
-  p_hist <- ggplot(params$HIST_ALL, aes(x = paras)) +
-    geom_histogram(binwidth = 1, fill = "skyblue", color = "white") +
-    facet_grid(species ~ dens) +
-    theme_bw() +
-    labs(title = "Histogram of simulated parasitism",
-         x = "Parasitized hosts", y = "Count")
-  print(p_hist)
-}
+Okuyama T (2026) Parametric assumptions in parasitoid functional response analysis. Journal of Applied Entomology. doi:10.1111/jen.70148
+
+```{r session}
+cat("R:", R.version.string, "\n")
 ```
-
-## Kernel Density
-
-```{r kernel}
-if (!is.null(params$HIST_ALL) && "kernel" %in% params$REPORT_ELEMENTS) {
-  p_kernel <- ggplot(params$HIST_ALL, aes(x = paras, color = species, fill = species)) +
-    geom_density(alpha = 0.4) +
-    facet_grid(species ~ dens) +
-    theme_bw() +
-    labs(title = "Kernel density of simulated parasitism",
-         x= "Parasitized hosts", y= "Density")
-  print(p_kernel)
-}
-```
-
-## Boxplots
-
-```{r box}
-if (!is.null(params$HIST_ALL) && "box" %in% params$REPORT_ELEMENTS) {
-  p_box <- ggplot(params$HIST_ALL, aes(x = factor(dens), y = paras, fill = species)) +
-    geom_boxplot() +
-    theme_bw() +
-    labs(title = "Boxplots of simulated parasitism",
-         x = "Density x Species", y = "Parasitized hosts")
-  print(p_box)
-}
-```
-
-## Violin Plots
-
-```{r violin}
-if (!is.null(params$HIST_ALL) && "violin" %in% params$REPORT_ELEMENTS) {
-  p_violin <- ggplot(params$HIST_ALL, aes(x = factor(dens), y = paras, fill = species)) +
-    geom_violin(alpha = 0.4) +
-    geom_jitter(aes(color = species),
-            position = position_jitterdodge(jitter.width = 0.15, dodge.width = 0.9),
-            alpha = 0.4, size = 1.5) +
-    theme_bw() +
-    labs(title = "Violin plots of simulated parasitism",
-         x = "Density x Species", y = "Parasitized hosts")
-  print(p_violin)
-}
-```
-
-## Fan Plot
-
-```{r fan}
-if (!is.null(params$HIST_ALL) && "fan" %in% params$REPORT_ELEMENTS) {
-  p_fan <- ggplot(params$HIST_ALL, aes(x = dens, y = paras, color = species)) +
-    geom_point(alpha = 0.1) +
-    geom_smooth(method = "loess", formula = y ~ x, se = FALSE) +
-    theme_bw() +
-    labs(title = "Fan plot of simulated parasitism",
-         x = "Host density", y = "Parasitized hosts")
-  print(p_fan)
-}
-```
-
-# Comparison Between Species
-
-```{r comparison}
-if (!is.null(params$PARAMS_ALL) && length(unique(params$PARAMS_ALL$species)) >= 2) {
-
-  # Version larga de PARAMS_ALL sin depender de tidyr::pivot_longer
-  # (tidyr no es una dependencia declarada del paquete).
-  comp <- do.call(rbind, lapply(c("a", "h", "z", "k", "s"), function(prm) {
-    data.frame(
-      species   = params$PARAMS_ALL$species,
-      parameter = prm,
-      value     = params$PARAMS_ALL[[prm]],
-      stringsAsFactors = FALSE
-    )
-  }))
-
-  p_comp <- ggplot(comp, aes(x = species, y = value, fill = species)) +
-    geom_bar(stat = "identity", position = "dodge") +
-    facet_wrap(~parameter, scales = "free") +
-    theme_bw() +
-    labs(title = "Comparison of parameter values between species",
-         y = "Parameter value")
-
-  print(p_comp)
-}
-```
-
-# Analysis settings
-
-```{r analysis-settings, echo=FALSE, eval=tiene_kableExtra}
-settings <- data.frame(
-  Parameter = c("Exposure time (T_exp)",
-                "Max iterations (itermax)",
-                "Population size (NP)",
-                "Relative tolerance (reltol)",
-                "Number of simulations (n_sim)",
-                "Min z",
-                "Max z (initial grid)",
-                "Step z",
-                "CPU cores"),
-  Value = c(
-    params$T_EXP,
-    params$ITERMAX,
-    params$NP,
-    params$RELTOL,
-    params$N_SIM,
-    params$Z_MIN,
-    params$Z_MAX,
-    params$Z_STEP,
-    params$CORES
-  )
-)
-
-knitr::kable(settings, caption = "Analysis settings used in the Shiny app.") %>%
-    kableExtra::kable_styling(latex_options = "hold_position")
-```
-
-
-# Notes
-
-This report was generated automatically using the Shiny application developed by Segundo Núñez-Campero, implementing the mechanistic model of Okuyama (2012).

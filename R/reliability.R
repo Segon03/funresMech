@@ -79,6 +79,24 @@ reliability <- function(fit) {
     sprintf("improvement in the last quarter of the run = %.2f NLL units", lg),
     if (is.finite(lg) && lg > th$late_warn) "Increase itermax (and NP)." else "")
 
+  if (nrow(prof) >= 3) {
+    # Interior points lower than both neighbours (beyond Monte Carlo noise),
+    # other than the global minimum: a smooth profile has a single minimum,
+    # so extra local minima mean that the optimiser failed at the
+    # neighbouring values of z.
+    n <- nrow(prof)
+    tol <- pmax(1, 2 * ifelse(is.finite(prof$nll_se), prof$nll_se, 0))
+    loc <- vapply(2:(n - 1), function(j)
+      prof$nll[j] < prof$nll[j - 1] - tol[j] && prof$nll[j] < prof$nll[j + 1] - tol[j], logical(1))
+    idx <- (2:(n - 1))[loc]
+    idx <- setdiff(idx, which.min(prof$nll))
+    rows$smooth <- .rel_row(
+      "Profile of z regular (one minimum)",
+      if (length(idx)) "fail" else "ok", length(idx),
+      if (length(idx)) paste0("extra local minima at z = ", paste(signif(prof$z[idx], 3), collapse = ", "))
+      else "no extra local minima",
+      if (length(idx)) "The optimiser failed at some values of z (the profile is jagged): increase itermax, NP and n_sim, and refit; the interval of z is not reliable." else "")
+  }
   if (!is.null(fit$ci)) {
     open <- c(if (fit$ci$low_censored) "lower", if (fit$ci$high_censored) "upper")
     rows$ci <- .rel_row(

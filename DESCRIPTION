@@ -22,26 +22,22 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)
 Imports:
+    bslib (>= 0.6.0),
     DEoptim,
-    dplyr,
     future,
     ggplot2 (>= 3.4.0),
-    magrittr,
     parallel,
     plotly,
     Rcpp,
     rlang,
     rmarkdown,
-    shiny,
-    shinyBS,
-    shinythemes,
+    shiny (>= 1.8.0),
     stats,
     utils
 LinkingTo:
     Rcpp
 Suggests:
     cmaes,
-    kableExtra,
     knitr,
     nloptr,
     testthat (>= 3.0.0)
