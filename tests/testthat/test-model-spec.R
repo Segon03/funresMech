@@ -104,26 +104,58 @@ test_that("screening of atypical trials does not depend on the time unit", {
 })
 
 test_that("a search bound hit at the optimum is widened automatically", {
-  skip_on_cran()
-  # the upper bound of the encounter rate (0.05 per h at H_ref, 1.2
-  # encounters per trial) is below what the data need
-  ctrl <- funres_control("exploratory", n_sim = 1000, itermax = 15, NP = 12,
-                         n_reeval = 2, bounds = list(lambda = c(1e-4, 0.05)), widen = 1)
-  # k fixed: otherwise a very small k compensates for a low encounter rate
-  m <- funres_model(search = "exponential")
-  set.seed(5)
-  f <- suppressWarnings(fit_funres(datos, 24, m, z_grid = c(1, 2), control = ctrl,
-                                   extend_z = FALSE, refine = FALSE))
+  # Deterministic: the point fit is replaced by a stub whose optimum lies on
+  # the upper bound of the encounter rate while that bound is below 5
+  # encounters per trial (dimensionless scale), and inside it otherwise. The
+  # real optimiser is not used, so the test does not depend on the random
+  # path of DEoptim (which differs between platforms).
+  fake_point <- function(z, data_spp, T_exp, model, ctrl, bounds, H_ref,
+                         z_free = FALSE, initialpop = NULL) {
+    on_bound <- bounds$lambda[2] < 5
+    lam <- if (on_bound) bounds$lambda[2] else 3
+    nm <- c("lambda", "h", "k", "s")
+    list(z = z, par = c(a = lam / (T_exp * H_ref^z), h = 0.5, z = z, k = 1, s = 0.2),
+         theta = NULL, nll_opt = 100 + z, nll_reeval = 100.1 + z + if (on_bound) 5 else 0,
+         nll_reeval_se = 0.05, n_floor = 0L,
+         at_bound = stats::setNames(c(on_bound, FALSE, FALSE, FALSE), nm),
+         bound_side = stats::setNames(c(if (on_bound) "upper" else "", "", "", ""), nm),
+         iter = 10, nfeval = 100, late_gain = 0, spread = stats::setNames(rep(0.1, 4), nm),
+         pop = NULL)
+  }
+  testthat::local_mocked_bindings(.fit_point = fake_point)
+  old <- future::plan(future::sequential)
+  on.exit(future::plan(old), add = TRUE)
+
+  base <- list(datos, 24, z_grid = c(1, 2), extend_z = FALSE, refine = FALSE)
+  # upper bound of lambda: 0.05 per h -> 1.2 encounters per trial (hit);
+  # after one widening x10 -> 12 (not hit)
+  ctrl <- funres_control("exploratory", bounds = list(lambda = c(1e-4, 0.05)),
+                         widen = 1, bb = FALSE)
+  f <- do.call(fit_funres, c(base, list(control = ctrl)))
   expect_true("lambda(upper)" %in% f$widened)
   expect_equal(f$bounds$lambda[2], 0.05 * 24 * 10)
+  expect_false(any(f$profile$at_bound))
   expect_true(any(grepl("widened automatically", f$notes)))
-  ctrl0 <- funres_control("exploratory", n_sim = 1000, itermax = 15, NP = 12,
-                          n_reeval = 2, bounds = list(lambda = c(1e-4, 0.05)), widen = 0)
-  set.seed(5)
-  f0 <- suppressWarnings(fit_funres(datos, 24, m, z_grid = c(1, 2), control = ctrl0,
-                                    extend_z = FALSE, refine = FALSE))
+
+  ctrl0 <- funres_control("exploratory", bounds = list(lambda = c(1e-4, 0.05)),
+                          widen = 0, bb = FALSE)
+  f0 <- do.call(fit_funres, c(base, list(control = ctrl0)))
   expect_length(f0$widened, 0)
+  expect_true(all(f0$profile$at_bound))
   expect_true(any(grepl("only a limit", f0$notes)))
+  r0 <- reliability(f0)
+  expect_equal(r0$status[r0$check == "Estimates away from search bounds"], "fail")
+})
+
+test_that("bound helpers widen and parse correctly", {
+  b <- funresMech:::.make_bounds(list(), 1)
+  hits <- funresMech:::.parse_hits("lambda(upper),k(lower),s(upper)")
+  expect_equal(vapply(hits, `[[`, "", "name"), c("lambda", "k", "s"))
+  w <- funresMech:::.widen_bounds(b, hits)
+  expect_equal(w$lambda, b$lambda * c(1, 10))
+  expect_equal(w$k, b$k * c(0.1, 1))
+  expect_equal(w$cv_h, b$cv_h * c(1, 10))
+  expect_length(funresMech:::.parse_hits(""), 0)
 })
 
 test_that("observed outcomes never simulated are counted and flagged", {
