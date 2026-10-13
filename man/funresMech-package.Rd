@@ -4,22 +4,29 @@
 \name{funresMech-package}
 \alias{funresMech}
 \alias{funresMech-package}
-\title{funresMech: Mechanistic Functional Response Analysis}
+\title{funresMech: Mechanistic Functional Response Analysis with Simulation-Based Likelihood}
 \description{
-Implements the mechanistic, stochastic functional response model of
-Okuyama (2012, 2026) for host-parasitoid systems. The probability
-distribution of the number of parasitised hosts is obtained by simulating
-the search-encounter-handling process (Gamma search times, Lognormal
-handling times), and the parameters are estimated by maximum likelihood
-with a simulated likelihood. The simulation engine is written in C++ with
-'Rcpp'.
+Fits mechanistic functional response models by simulation-based maximum
+likelihood, the approach proposed by Okuyama (2012) and developed for
+parasitoids by Okuyama (2026). The probability distribution of the number
+of hosts parasitized (or prey consumed) in each trial is obtained by
+simulating the foraging process, so the likelihood follows from explicit
+assumptions about search, encounter and handling rather than from a
+conventional count distribution.
 }
 \details{
-The package is used through the interactive application started with
-\code{\link[=run_app]{run_app()}}, which fits the model, computes the likelihood profile of the
-density-scaling exponent \code{z} (95\% interval by the likelihood-ratio
-criterion), compares the model with free \code{z} against \code{z = 1} by AIC,
-reports diagnostics and screens atypical trials.
+Main functions:
+\itemize{
+\item \code{\link[=funres_model]{funres_model()}}: the foraging process to simulate (distributions of
+search and handling times, parasitoid or predator process, fixed
+parameters); \code{\link[=funres_sampler]{funres_sampler()}} adds distributions written by the user.
+\item \code{\link[=fit_funres]{fit_funres()}} with \code{\link[=funres_control]{funres_control()}}: estimation, likelihood profile
+of the density-scaling exponent \code{z} and diagnostics.
+\item \code{\link[=simulate_response]{simulate_response()}}: simulated trials under a model.
+\item \code{\link[=run_app]{run_app()}}: interactive application.
+}
+
+The simulation engine is written in C++ with 'Rcpp'.
 }
 \references{
 Okuyama, T. (2012). A likelihood approach for functional response models.
@@ -30,7 +37,7 @@ response analysis. \emph{Journal of Applied Entomology}.
 \doi{10.1111/jen.70148}
 }
 \seealso{
-\code{\link[=run_app]{run_app()}}
+\code{\link[=fit_funres]{fit_funres()}}, \code{\link[=run_app]{run_app()}}
 }
 \author{
 \strong{Maintainer}: Segundo N<c3><ba><c3><b1>ez-Campero \email{segundo.nc@conicet.gov.ar}

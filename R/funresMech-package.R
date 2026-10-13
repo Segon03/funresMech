@@ -1,18 +1,23 @@
-#' funresMech: Mechanistic Functional Response Analysis
+#' funresMech: Mechanistic Functional Response Analysis with Simulation-Based Likelihood
 #'
-#' Implements the mechanistic, stochastic functional response model of
-#' Okuyama (2012, 2026) for host-parasitoid systems. The probability
-#' distribution of the number of parasitised hosts is obtained by simulating
-#' the search-encounter-handling process (Gamma search times, Lognormal
-#' handling times), and the parameters are estimated by maximum likelihood
-#' with a simulated likelihood. The simulation engine is written in C++ with
-#' 'Rcpp'.
+#' Fits mechanistic functional response models by simulation-based maximum
+#' likelihood, the approach proposed by Okuyama (2012) and developed for
+#' parasitoids by Okuyama (2026). The probability distribution of the number
+#' of hosts parasitized (or prey consumed) in each trial is obtained by
+#' simulating the foraging process, so the likelihood follows from explicit
+#' assumptions about search, encounter and handling rather than from a
+#' conventional count distribution.
 #'
-#' The package is used through the interactive application started with
-#' [run_app()], which fits the model, computes the likelihood profile of the
-#' density-scaling exponent `z` (95% interval by the likelihood-ratio
-#' criterion), compares the model with free `z` against `z = 1` by AIC,
-#' reports diagnostics and screens atypical trials.
+#' Main functions:
+#' * [funres_model()]: the foraging process to simulate (distributions of
+#'   search and handling times, parasitoid or predator process, fixed
+#'   parameters); [funres_sampler()] adds distributions written by the user.
+#' * [fit_funres()] with [funres_control()]: estimation, likelihood profile
+#'   of the density-scaling exponent `z` and diagnostics.
+#' * [simulate_response()]: simulated trials under a model.
+#' * [run_app()]: interactive application.
+#'
+#' The simulation engine is written in C++ with 'Rcpp'.
 #'
 #' @references
 #' Okuyama, T. (2012). A likelihood approach for functional response models.
@@ -22,7 +27,7 @@
 #' response analysis. *Journal of Applied Entomology*.
 #' \doi{10.1111/jen.70148}
 #'
-#' @seealso [run_app()]
+#' @seealso [fit_funres()], [run_app()]
 #' @useDynLib funresMech, .registration = TRUE
 #' @importFrom Rcpp sourceCpp
 "_PACKAGE"

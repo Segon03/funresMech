@@ -91,3 +91,45 @@ test_that("fit_funres() is reproducible with set.seed() and validates input", {
   expect_error(fit_funres(data.frame(dens = 5, par = 2.5), T = 1), "whole numbers")
   expect_error(funres_control(n_sim = 10), "n_sim")
 })
+
+test_that("screening of atypical trials does not depend on the time unit", {
+  skip_on_cran()
+  d2 <- read.csv(test_path("fixtures", "D2.csv"))
+  a <- funresMech:::screen_outliers(d2, 24)
+  b <- funresMech:::screen_outliers(d2, 24 * 60)
+  expect_equal(a$p_loo, b$p_loo)
+  expect_equal(sum(a$flagged), 1)
+})
+
+test_that("a search bound hit at the optimum is widened automatically", {
+  skip_on_cran()
+  # the upper bound of the encounter rate (0.05 per h at H_ref, 1.2
+  # encounters per trial) is below what the data need
+  ctrl <- funres_control("exploratory", n_sim = 1000, itermax = 15, NP = 12,
+                         n_reeval = 2, bounds = list(lambda = c(1e-4, 0.05)), widen = 1)
+  # k fixed: otherwise a very small k compensates for a low encounter rate
+  m <- funres_model(search = "exponential")
+  set.seed(5)
+  f <- suppressWarnings(fit_funres(datos, 24, m, z_grid = c(1, 2), control = ctrl,
+                                   extend_z = FALSE, refine = FALSE))
+  expect_true("lambda(upper)" %in% f$widened)
+  expect_equal(f$bounds$lambda[2], 0.05 * 24 * 10)
+  expect_true(any(grepl("widened automatically", f$notes)))
+  ctrl0 <- funres_control("exploratory", n_sim = 1000, itermax = 15, NP = 12,
+                          n_reeval = 2, bounds = list(lambda = c(1e-4, 0.05)), widen = 0)
+  set.seed(5)
+  f0 <- suppressWarnings(fit_funres(datos, 24, m, z_grid = c(1, 2), control = ctrl0,
+                                    extend_z = FALSE, refine = FALSE))
+  expect_length(f0$widened, 0)
+  expect_true(any(grepl("only a limit", f0$notes)))
+})
+
+test_that("observed outcomes never simulated are counted and flagged", {
+  d <- data.frame(dens = c(10, 10), par = c(0, 10))
+  m <- funres_model()
+  set.seed(6)
+  r <- funresMech:::.nll_sim(c(a = 1e-4, h = 0.1, z = 1, k = 50, s = 0), m, d, 1, 200,
+                             detail = TRUE)
+  expect_equal(r$n_floor, 1L)                  # 10 of 10 is never simulated
+  expect_gt(r$nll, 700)
+})

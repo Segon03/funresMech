@@ -14,6 +14,7 @@ funres_control(
   n_reeval,
   method = "DEoptim",
   bounds = list(),
+  widen = 2L,
   cut = TRUE
 )
 }
@@ -43,6 +44,10 @@ interval; their standard error measures Monte Carlo noise.}
 defaults: \code{lambda} (encounter rate at the reference density, per unit
 time), \code{h} (mean handling time, time units), \code{k}, \code{cv_h} (s / h) and \code{z}.
 See Details of \code{\link[=fit_funres]{fit_funres()}}.}
+
+\item{widen}{Maximum number of automatic widenings of a search bound on
+which the optimum ends (each widening multiplies the bound by 10 and
+refits the affected points of the profile). 0 disables it.}
 
 \item{cut}{Stop each simulated trial once all hosts have been attacked
 (exact; only saves time).}

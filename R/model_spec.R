@@ -288,22 +288,27 @@ simulate_response <- function(model = funres_model(), dens, T, par, n_sim = 1000
 # Simulated negative log-likelihood for natural parameters par = c(a, h, z, k, s).
 # Densities are visited in order of appearance, as in Okuyama (2026). Returns
 # 1e10 outside the valid domain so that optimizers discard the point.
-.nll_sim <- function(par, model, data_spp, T, n_sim, cut = TRUE) {
+.nll_sim <- function(par, model, data_spp, T, n_sim, cut = TRUE, detail = FALSE) {
   a <- par[["a"]]; h <- par[["h"]]; z <- par[["z"]]; k <- par[["k"]]; s <- par[["s"]]
   if (!all(is.finite(c(a, h, z, k, s))) || a <= 0 || h <= 0 || k <= 0 || s < 0)
     return(1e10)
   if (model$handling$user && !(s > 0)) return(1e10)
   minp <- .Machine$double.xmin
   nll <- 0
+  n_floor <- 0L
   for (x in unique(data_spp$dens)) {
     if (x < 1) next
     y_obs <- data_spp$par[data_spp$dens == x]
     if (anyNA(y_obs) || any(y_obs < 0 | y_obs > x)) return(1e10)
     sim <- .simulate_x(model, x, T, a, h, z, k, s, n_sim, cut)
     frec <- tabulate(sim + 1L, nbins = x + 1L) / n_sim
-    nll <- nll - sum(log(pmax(frec[y_obs + 1L], minp)))
+    pr <- frec[y_obs + 1L]
+    n_floor <- n_floor + sum(pr == 0)
+    nll <- nll - sum(log(pmax(pr, minp)))
   }
-  nll
+  # n_floor: observed outcomes never produced by the simulation; each adds
+  # -log(double.xmin) = 708.4 to the NLL
+  if (detail) list(nll = nll, n_floor = n_floor) else nll
 }
 
 #' Check a user sampler

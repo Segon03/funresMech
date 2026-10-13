@@ -87,6 +87,11 @@ NULL
 #   influences_dispersion (rho falls by more than half without it).
 screen_outliers <- function(data_spp, T_exp, alpha = 0.05) {
   .check_data_spp(data_spp)
+  # The Beta-Binomial model is fitted with time measured in units of T
+  # (a* = a T, h* = h / T), so that its fixed bounds and starting values do
+  # not depend on the time unit of the experiment. The predicted
+  # distribution, the only output used here, is the same in any unit.
+  T_exp <- 1
   n <- nrow(data_spp)
   full <- .fit_bb(data_spp, T_exp)
   if (is.null(full)) stop("The Beta-Binomial screening model could not be fitted.",

@@ -1,19 +1,23 @@
 Package: funresMech
-Title: Mechanistic Functional Response Analysis
-Version: 1.1.0
+Title: Mechanistic Functional Response Analysis with Simulation-Based Likelihood
+Version: 1.2.0
 Authors@R: 
     person('Segundo', 'Núñez-Campero', 
            email = 'segundo.nc@conicet.gov.ar', 
            role = c('aut', 'cre'))
-Description: Implements the mechanistic functional response
-  model proposed by Okuyama (2012) <doi:10.1016/j.biocontrol.2011.10.008> for 
-  host-parasitoid systems. Provides tools for model fitting, likelihood 
-  profiling, stochastic simulation, and visualization of parasitism 
-  distributions.
-  The stochastic simulation engine is implemented in C++ via 'Rcpp'.
-  Includes an interactive 'shiny' application for complete analysis workflows,
-  built with 'plotly' for interactive graphics and 'rmarkdown' for
-  reproducible reports.
+Description: Fits mechanistic functional response models to
+  experimental counts of hosts parasitized or prey consumed by
+  simulation-based maximum likelihood (Okuyama 2012
+  <doi:10.1016/j.biocontrol.2011.10.008>; Okuyama 2026 <doi:10.1111/jen.70148>).
+  The probability distribution of the counts is obtained by simulating the
+  search, encounter and handling process, with user-selectable distributions
+  of search and handling times (built-in families or samplers written in R or
+  C++), parasitoid (no host removal) or predator (prey removal) processes,
+  and fixed or estimated parameters. Provides likelihood profiling of the
+  density-scaling exponent, diagnostics of optimisation and Monte Carlo
+  reliability, screening of atypical trials, stochastic simulation and an
+  interactive 'shiny' application with 'plotly' graphics and 'rmarkdown'
+  reports. The simulation engine is implemented in C++ via 'Rcpp'.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Depends: R (>= 4.1.0)

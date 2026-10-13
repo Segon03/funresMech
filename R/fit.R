@@ -42,6 +42,9 @@ NULL
 #'   defaults: `lambda` (encounter rate at the reference density, per unit
 #'   time), `h` (mean handling time, time units), `k`, `cv_h` (s / h) and `z`.
 #'   See Details of [fit_funres()].
+#' @param widen Maximum number of automatic widenings of a search bound on
+#'   which the optimum ends (each widening multiplies the bound by 10 and
+#'   refits the affected points of the profile). 0 disables it.
 #' @param cut Stop each simulated trial once all hosts have been attacked
 #'   (exact; only saves time).
 #' @return An object of class `funres_control`.
@@ -52,7 +55,8 @@ NULL
 #' @export
 funres_control <- function(preset = c("standard", "exploratory", "final"),
                            n_sim, itermax, NP, reltol, steptol, n_reeval,
-                           method = "DEoptim", bounds = list(), cut = TRUE) {
+                           method = "DEoptim", bounds = list(), widen = 2L,
+                           cut = TRUE) {
   preset <- match.arg(preset)
   p <- switch(preset,
               exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
@@ -69,7 +73,8 @@ funres_control <- function(preset = c("standard", "exploratory", "final"),
   if (p$NP < 4) stop("NP must be >= 4.", call. = FALSE)
   if (p$n_reeval < 1) stop("n_reeval must be >= 1.", call. = FALSE)
   structure(c(list(preset = preset), p,
-              list(method = method, bounds = bounds, cut = isTRUE(cut))),
+              list(method = method, bounds = bounds, widen = as.integer(widen),
+                   cut = isTRUE(cut))),
             class = "funres_control")
 }
 
@@ -124,12 +129,17 @@ print.funres_control <- function(x, ...) {
   theta <- res$optim$bestmem
   names(theta) <- ptab$name
   par <- .theta_to_nat(theta, ptab, model, z, H_ref, T_exp)
-  reevals <- vapply(seq_len(ctrl$n_reeval), function(i) fn(theta), numeric(1))
+  re <- lapply(seq_len(ctrl$n_reeval), function(i)
+    .nll_sim(par, model, data_spp, T_exp, ctrl$n_sim, ctrl$cut, detail = TRUE))
+  reevals <- vapply(re, function(r) if (is.list(r)) r$nll else r, numeric(1))
+  n_floor <- max(vapply(re, function(r) if (is.list(r)) r$n_floor else NA_integer_, 0L))
 
   rng <- ptab$upper - ptab$lower
-  at_lower <- (theta <= ptab$lower + 1e-3 * rng) & !ptab$natural_lower
-  at_upper <- theta >= ptab$upper - 1e-3 * rng
+  at_lower <- (theta <= ptab$lower + 0.01 * rng) & !ptab$natural_lower
+  at_upper <- theta >= ptab$upper - 0.01 * rng
   at_bound <- setNames(at_lower | at_upper, ptab$name)
+  bound_side <- setNames(ifelse(at_lower, "lower", ifelse(at_upper, "upper", "")),
+                         ptab$name)
 
   tr <- res$member$bestvalit
   it <- res$optim$iter
@@ -141,7 +151,8 @@ print.funres_control <- function(x, ...) {
        nll_reeval = mean(reevals),
        nll_reeval_se = if (length(reevals) > 1) stats::sd(reevals) / sqrt(length(reevals))
                        else NA_real_,
-       at_bound = at_bound, iter = it, nfeval = res$optim$nfeval,
+       n_floor = n_floor,
+       at_bound = at_bound, bound_side = bound_side, iter = it, nfeval = res$optim$nfeval,
        late_gain = late_gain, spread = setNames(spread, ptab$name), pop = pop)
 }
 
@@ -198,11 +209,34 @@ print.funres_control <- function(x, ...) {
                nll_opt = p$nll_opt,
                a = p$par[["a"]], h = p$par[["h"]], k = p$par[["k"]], s = p$par[["s"]],
                at_bound = any(p$at_bound),
-               bound_names = paste(names(p$at_bound)[p$at_bound], collapse = ","),
-               iter = p$iter, late_gain = p$late_gain,
+               bound_names = if (any(p$at_bound))
+                 paste0(names(p$at_bound)[p$at_bound], "(", p$bound_side[p$at_bound],
+                        ")", collapse = ",") else "",
+               n_floor = p$n_floor, iter = p$iter, late_gain = p$late_gain,
                max_spread = suppressWarnings(max(p$spread, na.rm = TRUE)),
                stringsAsFactors = FALSE)
   }))
+}
+
+# Widen the dimensionless bounds that were hit, by a factor of 10 on the
+# natural scale (for cv_h, the upper bound is multiplied by 10; its lower
+# bound 0 is natural). Bounds of user samplers are not changed here.
+.widen_bounds <- function(bounds, hits) {
+  key <- c(lambda = "lambda", h = "h", k = "k", s = "cv_h", z = "z")
+  for (hh in hits) {
+    nm <- key[[hh$name]]
+    if (hh$side == "lower") bounds[[nm]][1] <- bounds[[nm]][1] / 10
+    if (hh$side == "upper") bounds[[nm]][2] <- bounds[[nm]][2] * 10
+  }
+  bounds
+}
+
+# Bound hits of a profile row ("h(upper),k(lower)" -> list of name/side)
+.parse_hits <- function(txt) {
+  if (is.na(txt) || !nzchar(txt)) return(list())
+  lapply(strsplit(txt, ",")[[1]], function(x) {
+    list(name = sub("\\(.*", "", x), side = sub(".*\\((.*)\\)", "\\1", x))
+  })
 }
 
 # Text for an upper limit of z that the profile does not cross.
@@ -340,6 +374,25 @@ fit_funres <- function(data, T, model = funres_model(),
   }
   rownames(prof) <- NULL
 
+  # Automatic widening of search bounds hit at the optimum (at most twice).
+  # Only the points whose optimum ended on a bound are refitted.
+  widened <- character(0)
+  user_par <- c(if (model$search$user) "k", if (model$handling$user) "s")
+  for (round in seq_len(max(0L, as.integer(control$widen)))) {
+    i_best <- which.min(prof$nll)
+    hits <- Filter(function(hh) !(hh$name %in% user_par),
+                   .parse_hits(prof$bound_names[i_best]))
+    if (!length(hits)) break
+    bounds <- .widen_bounds(bounds, hits)
+    args$bounds <- bounds
+    widened <- c(widened, vapply(hits, function(hh) paste0(hh$name, "(", hh$side, ")"), ""))
+    redo <- prof$at_bound
+    prof <- rbind(prof[!redo, , drop = FALSE], run(prof$z[redo]))
+    prof <- prof[order(prof$z), ]
+    rownames(prof) <- NULL
+    if (!is.null(ci)) ci <- .profile_ci(prof$z, prof$nll)
+  }
+
   i_best <- which.min(prof$nll)
   par <- c(a = prof$a[i_best], h = prof$h[i_best], z = prof$z[i_best],
            k = prof$k[i_best], s = prof$s[i_best])
@@ -355,7 +408,7 @@ fit_funres <- function(data, T, model = funres_model(),
     n_par = n_free, ci = ci,
     aic = data.frame(AIC_full = aic_full, AIC_restricted = aic_restricted,
                      delta_AIC = aic_restricted - aic_full),
-    extended = extended, refined = refined, seed = seed,
+    extended = extended, refined = refined, widened = widened, seed = seed,
     version = as.character(utils::packageVersion("funresMech"))),
     class = "funres_fit")
   fit$notes <- .fit_notes(fit, i_best, z_extend)
@@ -379,11 +432,23 @@ fit_funres <- function(data, T, model = funres_model(),
     notes <- c(notes, paste0(
       "The profile does not cross the 95% threshold below z_hat: the lower ",
       "limit of z is <= ", min(prof$z), "."))
+  if (is.finite(prof$n_floor[i_best]) && prof$n_floor[i_best] > 0)
+    notes <- c(notes, paste0(
+      prof$n_floor[i_best], " observed outcome(s) were never produced by the ",
+      "simulation at the optimum (their probability was set to the numerical ",
+      "floor, adding 708 NLL units each). The fit is not reliable: increase ",
+      "n_sim, check the atypical-trial screening, and check that the model ",
+      "can produce these outcomes."))
+  if (length(fit$widened))
+    notes <- c(notes, paste0(
+      "Search bounds were widened automatically after the optimum ended on ",
+      "them: ", paste(fit$widened, collapse = ", "), "."))
   if (prof$at_bound[i_best])
     notes <- c(notes, paste0(
       "At z_hat the optimiser ended on a search bound (",
-      prof$bound_names[i_best], "): widen that bound and refit; the estimate ",
-      "of that parameter is only a limit."))
+      prof$bound_names[i_best], "): the estimate of that parameter is only a ",
+      "limit. Widen the bound (funres_control(bounds = ...)) and refit, or ",
+      "check whether the data can identify it."))
   gap <- prof$nll[i_best] - prof$nll_opt[i_best]
   if (is.finite(gap) && gap > 2)
     notes <- c(notes, paste0(
