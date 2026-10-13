@@ -116,7 +116,7 @@ test_that("invalid user samplers fail with a clear error", {
   bad_len <- function(n, shape) rep(1, n - 1)
   bad_neg <- function(n, shape) rep(-1, n)
   expect_error(draw(10, TRUE, 9L, 1, 1, bad_len), "exactly n values")
-  expect_error(draw(10, TRUE, 9L, 1, 1, bad_neg), "finite and > 0")
+  expect_error(draw(10, TRUE, 9L, 1, 1, bad_neg), "finite and >= 0")
   expect_error(sim(5L, 1, 0.1, 1, 1, 0.1, 1, 10L, 7L, 0L), "unknown search family")
   expect_error(sim(5L, 1, 0.1, 1, 1, 0.1, 1, 10L, 0L, 7L), "unknown handling family")
 })

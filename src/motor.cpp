@@ -95,8 +95,8 @@ private:
             stop("user sampler must return exactly n values (got %d, expected %d)",
                  (int) v.size(), block_);
         for (int i = 0; i < block_; ++i)
-            if (!(v[i] > 0) || !R_finite(v[i]))
-                stop("user sampler returned a value that is not finite and > 0");
+            if (!(v[i] >= 0) || !R_finite(v[i]))
+                stop("user sampler returned a value that is not finite and >= 0");
         buf_.assign(v.begin(), v.end());
         pos_ = 0;
     }
@@ -152,8 +152,8 @@ public:
         case F_USER_R:  return mean_[r] * rs_->next();
         default: {
             double v = cf_(k_);
-            if (!(v > 0) || !R_finite(v))
-                stop("C++ search sampler returned a value that is not finite and > 0");
+            if (!(v >= 0) || !R_finite(v))
+                stop("C++ search sampler returned a value that is not finite and >= 0");
             return mean_[r] * v;
         }
         }
@@ -202,8 +202,8 @@ public:
         case F_USER_R:   return h_ * rs_->next();
         default: {
             double v = cf_(s_);
-            if (!(v > 0) || !R_finite(v))
-                stop("C++ handling sampler returned a value that is not finite and > 0");
+            if (!(v >= 0) || !R_finite(v))
+                stop("C++ handling sampler returned a value that is not finite and >= 0");
             return h_ * v;
         }
         }

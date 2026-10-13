@@ -172,26 +172,63 @@ test_that("negloglik_fixed_z() es reproducible con la semilla del usuario", {
 # Reparametrizacion log
 # ---------------------------------------------------------------------------
 
-test_that("la reparametrizacion log es de ida y vuelta exacta", {
+test_that("la parametrizacion adimensional es de ida y vuelta exacta", {
   H_ref <- funresMech:::.h_ref(data.frame(dens = c(2, 10, 50)))
   expect_equal(H_ref, exp(mean(log(c(2, 10, 50)))))
-  par_nat <- c(a = 3.9e-5, h = 0.626, k = 0.026, s = 0.669)
-  for (z in c(0.5, 2.5, 4.5, 20)) {
-    theta <- funresMech:::.nat_to_theta(par_nat, z, H_ref)
-    back  <- funresMech:::.theta_to_nat(theta, z, H_ref)
-    expect_equal(unname(back), unname(par_nat), tolerance = 1e-12)
+  b <- funresMech:::.make_bounds(list(), T = 24)
+  for (m in list(funresMech::funres_model(),
+                 funresMech::funres_model(search = "weibull", handling = "gamma"))) {
+    for (zf in c(FALSE, TRUE)) {
+      ptab <- funresMech:::.par_table(m, b, z_free = zf)
+      for (z in c(0.5, 2.5, 4.5, 20)) {
+        par <- c(a = 3.9e-5, h = 0.626, z = z, k = 0.026, s = 0.669)
+        th <- funresMech:::.nat_to_theta(par, ptab, m, H_ref, 24)
+        back <- funresMech:::.theta_to_nat(th, ptab, m, z, H_ref, 24)
+        expect_equal(unname(back), unname(par), tolerance = 1e-12)
+      }
+    }
   }
 })
 
-test_that("las cotas del optimizador cubren los valores de D2 y D3 de Okuyama", {
-  b <- funresMech:::.log_bounds()
+test_that("las cotas no dependen de la unidad de tiempo", {
+  # el mismo experimento en horas y en minutos da los mismos theta
   H_ref <- 15.4
-  # a ~ 1e-5 a z = 6, h ~ 0.6, k ~ 0.05, s ~ 0.9 deben quedar dentro
-  for (z in c(1, 4.5, 6, 20)) {
-    th <- funresMech:::.nat_to_theta(c(a = 1e-3 / H_ref^(z - 1), h = 0.6, k = 0.05, s = 0.9),
-                                     z, H_ref)
-    expect_true(all(th >= b$lower & th <= b$upper))
+  m <- funresMech::funres_model()
+  p_h   <- c(a = 0.012, h = 0.626, z = 2.5, k = 0.9, s = 0.54)          # horas
+  p_min <- c(a = 0.012 / 60, h = 0.626 * 60, z = 2.5, k = 0.9, s = 0.54 * 60)
+  ptab <- funresMech:::.par_table(m, funresMech:::.make_bounds(list(), 24))
+  expect_equal(funresMech:::.nat_to_theta(p_h, ptab, m, H_ref, 24),
+               funresMech:::.nat_to_theta(p_min, ptab, m, H_ref, 24 * 60))
+  # cotas de usuario en unidades naturales
+  b1 <- funresMech:::.make_bounds(list(h = c(0.01, 2)), T = 24)
+  b2 <- funresMech:::.make_bounds(list(h = c(0.6, 120)), T = 24 * 60)
+  expect_equal(b1$h, b2$h)
+  expect_error(funresMech:::.make_bounds(list(foo = c(1, 2)), 1), "Unknown bound")
+})
+
+test_that("las cotas por defecto cubren los valores de D2 y D3 de Okuyama", {
+  b <- funresMech:::.make_bounds(list(), T = 24)
+  m <- funresMech::funres_model()
+  ptab <- funresMech:::.par_table(m, b)
+  H_ref <- 15.4
+  for (p in list(c(a = 0.001, h = 0.606, z = 3.1, k = 0.037, s = 0.682),
+                 c(a = 0.012, h = 0.626, z = 2.5, k = 0.902, s = 0.542),
+                 c(a = 1e-3 / H_ref^5, h = 0.6, z = 6, k = 0.05, s = 0.9))) {
+    th <- funresMech:::.nat_to_theta(p, ptab, m, H_ref, 24)
+    expect_true(all(th >= ptab$lower & th <= ptab$upper))
   }
+})
+
+test_that("los parametros fijos salen del vector que busca el optimizador", {
+  b <- funresMech:::.make_bounds(list(), T = 1)
+  expect_equal(funresMech:::.par_table(funresMech::funres_model(), b)$name,
+               c("lambda", "h", "k", "s"))
+  expect_equal(funresMech:::.par_table(
+    funresMech::funres_model(search = "exponential", handling = "constant"), b)$name,
+    c("lambda", "h"))
+  expect_equal(funresMech:::.par_table(funresMech::funres_model(), b, z_free = TRUE)$name,
+               c("lambda", "h", "k", "s", "z"))
+  expect_equal(funresMech:::.n_free(funresMech::funres_model(fix = list(z = 1))), 4L)
 })
 
 # ---------------------------------------------------------------------------
@@ -252,22 +289,24 @@ test_that(".nll_at_z() interpola linealmente y devuelve NA fuera de la grilla", 
 # Ajuste
 # ---------------------------------------------------------------------------
 
-test_that("fit_z_fixed() devuelve la estructura esperada", {
-  # itermax y NP chicos: CRAN limita el tiempo de check. DEoptim avisa que
-  # NP deberia ser >= 10x la cantidad de parametros; es solo una
-  # recomendacion de convergencia y se ignora aca para mantener el test rapido.
+test_that(".fit_point() devuelve la estructura esperada", {
+  # itermax y NP chicos: CRAN limita el tiempo de check.
   set.seed(42)
-  ajuste <- suppressWarnings(funresMech:::fit_z_fixed(
-    z = 1, data_spp = datos_chicos, T_exp = 1,
-    n_sim = 50, itermax = 10, NP = 20, reltol = 1e-2, n_reeval = 2
-  ))
+  m <- funresMech::funres_model()
+  ctrl <- funresMech::funres_control("exploratory", n_sim = 100, itermax = 10,
+                                     NP = 20, n_reeval = 2)
+  ajuste <- suppressWarnings(funresMech:::.fit_point(
+    z = 1, data_spp = datos_chicos, T_exp = 1, model = m, ctrl = ctrl,
+    bounds = funresMech:::.make_bounds(list(), 1),
+    H_ref = funresMech:::.h_ref(datos_chicos)))
   expect_type(ajuste, "list")
-  expect_named(ajuste$par, c("a", "h", "k", "s"))
+  expect_named(ajuste$par, c("a", "h", "z", "k", "s"))
   expect_true(all(ajuste$par[c("a", "h", "k")] > 0))
   expect_gte(ajuste$par[["s"]], 0)
-  expect_true(is.finite(ajuste$nll))
+  expect_true(is.finite(ajuste$nll_opt))
   expect_true(is.finite(ajuste$nll_reeval))
   expect_length(ajuste$at_bound, 4)
+  expect_equal(ajuste$iter, 10)
 })
 
 test_that("fit_profile() devuelve el perfil, z_hat, IC y AIC", {
@@ -275,10 +314,12 @@ test_that("fit_profile() devuelve el perfil, z_hat, IC y AIC", {
   set.seed(42)
   ajuste <- suppressWarnings(funresMech:::fit_profile(
     data_spp = datos_chicos, T_exp = 1, z_grid = c(0.5, 1, 2),
-    n_sim = 50, itermax = 10, NP = 20, reltol = 1e-2, n_reeval = 2,
+    n_sim = 100, itermax = 10, NP = 20, reltol = 1e-2, n_reeval = 2,
     extend_z = FALSE
   ))
   expect_named(ajuste, c("profile", "par", "nll", "aic", "ci", "extended", "refined", "notes"))
+  # la NLL del perfil es la media de las reevaluaciones (no el minimo del optimizador)
+  expect_true(all(c("nll", "nll_se", "nll_opt") %in% names(ajuste$profile)))
   expect_named(ajuste$par, c("a", "h", "z", "k", "s"))
   expect_equal(nrow(ajuste$profile), 3)
   expect_true(all(is.finite(ajuste$profile$nll)))
@@ -294,7 +335,7 @@ test_that("fit_profile() agrega z = 1 a la grilla y valida los datos", {
   set.seed(1)
   ajuste <- suppressWarnings(funresMech:::fit_profile(
     data_spp = datos_chicos, T_exp = 1, z_grid = c(0.5, 1.5),
-    n_sim = 30, itermax = 5, NP = 12, n_reeval = 1, extend_z = FALSE))
+    n_sim = 100, itermax = 5, NP = 12, n_reeval = 1, extend_z = FALSE))
   expect_true(1 %in% ajuste$profile$z)
   expect_error(funresMech:::fit_profile(
     data_spp = data.frame(dens = 5, par = 9), T_exp = 1, z_grid = 1),

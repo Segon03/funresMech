@@ -33,11 +33,6 @@ response analysis. \emph{Journal of Applied Entomology}.
 \code{\link[=run_app]{run_app()}}
 }
 \author{
-\strong{Maintainer}: Segundo Núñez-Campero \email{segundo.nc@conicet.gov.ar}
-
-Authors:
-\itemize{
-  \item Segundo Núñez-Campero \email{segundo.nc@conicet.gov.ar}
-}
+\strong{Maintainer}: Segundo N<c3><ba><c3><b1>ez-Campero \email{segundo.nc@conicet.gov.ar}
 
 }

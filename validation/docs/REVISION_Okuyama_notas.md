@@ -37,9 +37,34 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
 | H6 | El paquete compara AIC de z libre vs z = 1; el manuscrito dice que compara con beta-binomial. | 3.11 |
 | H8 | Grilla de z por defecto en la app: 0.5–5 paso 0.25; manuscrito: 0.5–6.0 paso 0.1. | 3.8 / 8 |
 | H1–H2 | Cotas absolutas (h ≤ 5, λ_ref en [1e-3, 1e3]) y T rotulado en horas: dependencia de la unidad de tiempo. | 2 |
+| H14 | `reltol` de DEoptim no tenía efecto en 1.1.0: DEoptim lo evalúa cada `steptol` generaciones y `steptol` vale `itermax` por defecto, así que nunca había parada temprana. | resuelto en `funres_control()` (reltol y steptol explícitos; por defecto sin parada temprana) |
+| H15 | Las cotas del modelo beta-binomial del screening (a, h <= 5) también son absolutas y dependen de la unidad de T. | 2 |
 
-## Decisiones pendientes del autor
+## Decisiones del autor (2026-10-13)
 
-D1 API pública · D2 alcance de distribuciones propias · D3 modo depredador ·
-D4 número de versión (propuesta 1.2.0) · D5 alcance del banco de optimizadores ·
-D6 presupuesto de cómputo (tras piloto).
+* D1: se exporta una API pública además de `run_app()`.
+* D2: distribuciones en tres niveles: familias en C++, muestreadores en R y
+  muestreadores en C++ (puntero externo).
+* D3: modo depredador: verificar primero. Verificado: el Apéndice S1 y el
+  Script S2 de Okuyama (2026) definen el proceso (presa consumida retirada,
+  dH/dt = -P a H^z / (1 + a h H^z)); el propio apéndice indica que la elección
+  depende del sistema (un parasitoide que no revisita hospedadores
+  parasitados equivale al proceso depredador). Se implementa como
+  `process = "predator"`.
+* D4: versión 1.2.0.
+* D5 (optimizadores) y D6 (presupuesto de cómputo): pendientes del piloto.
+
+## Fase 1 (estado)
+
+* Motor generalizado (`src/motor.cpp`): familias de búsqueda Gamma, Lognormal,
+  Weibull, R y C++ del usuario (media 1/lambda, CV^2 = 1/k); manipulación
+  Lognormal, Gamma, Weibull, constante, R y C++ (media h, desvío s); proceso
+  parasitoide o depredador. Ruta rápida del modelo por defecto idéntica bit
+  a bit a 1.1.0.
+* API: `funres_model()`, `funres_sampler()`, `test_sampler()`,
+  `simulate_response()`, `funres_control()`, `fit_funres()`.
+* Parametrización adimensional (tiempo en unidades de T) y cotas por defecto
+  independientes de la unidad (adelanto de la Fase 2).
+* Perfil e IC sobre la media de las reevaluaciones (`nll`), con su error
+  estándar (`nll_se`); el mínimo del optimizador queda como `nll_opt`
+  (adelanto de la Fase 3.1).
