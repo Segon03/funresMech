@@ -316,8 +316,8 @@ theme_void_like <- function() {
             dq(o$preset), as.integer(o$n_sim), as.integer(o$itermax), as.integer(o$NP),
             as.integer(o$n_reeval), dq(o$method),
             if (length(b)) paste0(", bounds = ", dq(b)) else "",
-            if (isTRUE(o$crn)) ", crn = TRUE" else "",
-            if (isTRUE(o$polish)) ", polish = 200" else "",
+            if (isTRUE(o$crn)) "" else ", crn = FALSE",
+            if (isTRUE(o$polish)) "" else ", polish = 0",
             if (!isTRUE(o$widen)) ", widen = 0" else ""),
     "",
     if (isTRUE(o$parallel) && o$workers > 1)

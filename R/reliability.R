@@ -113,6 +113,10 @@ reliability <- function(fit) {
       sprintf("k = %.3g", k),
       if (k < 0.1) "Very irregular search (ridge between z, a and k): check the atypical-trial screening; consider fixing k (e.g. exponential search) and compare by AIC." else "")
   }
+  if (identical(fit$z_method, "joint"))
+    rows$joint <- .rel_row("Estimation of z by the validated method", "warning", NA_real_,
+                           "joint estimation of z (experimental)",
+                           "In validation the joint method under-covered the true z (67% vs 96% for the profile); confirm z and its interval with z_method = 'profile'.")
   if (fit$control$preset == "exploratory")
     rows$preset <- .rel_row("Settings suitable for reporting", "warning", NA_real_,
                             "exploratory preset",

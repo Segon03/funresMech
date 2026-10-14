@@ -16,8 +16,8 @@ funres_control(
   bounds = list(),
   widen = 2L,
   bb = TRUE,
-  crn = FALSE,
-  polish = 0L,
+  crn = TRUE,
+  polish = 200L,
   cut = TRUE
 )
 }
@@ -59,13 +59,13 @@ refits the affected points of the profile). 0 disables it.}
 \item{bb}{Fit the reference Beta-Binomial model with the same expected
 value (Okuyama 2026) and report its AIC.}
 
-\item{crn}{Use common random numbers during the search: every evaluation
-uses the same random seed, so the objective becomes deterministic in the
-parameters (but piecewise constant). Re-evaluations at the optimum always
-use fresh random numbers.}
+\item{crn}{Use common random numbers during the search (default): every
+evaluation uses the same random seed, so the objective becomes
+deterministic in the parameters (but piecewise constant). Re-evaluations
+at the optimum always use fresh random numbers.}
 
 \item{polish}{Number of Nelder-Mead evaluations used to refine the best
-point found by the global method (0 = none).}
+point found by the global method (default 200; 0 = none).}
 
 \item{cut}{Stop each simulated trial once all hosts have been attacked
 (exact; only saves time).}
@@ -90,6 +90,17 @@ diagnostics returned by \code{\link[=fit_funres]{fit_funres()}} whatever the pre
 
 
 The final preset is the configuration of Okuyama (2026).
+
+\strong{Default optimiser.} Differential evolution with common random numbers
+and a Nelder-Mead polish was chosen in a comparison of strategies with
+equal budgets on simulated data with known parameters (validation/,
+phase 4): it reached the best optimum found within 0.5 NLL units in 80\% of
+the runs and never missed it by more than 2.2 units, whereas plain
+differential evolution (the method of version 1.1.0) reached it in 43\% of
+the runs, CMA-ES in 78\% (with occasional failures of up to 68 units) and
+CRS2 in 67\%. Even the best strategy missed the best optimum in one run out
+of five with the exploratory budget: check every fit with \code{\link[=reliability]{reliability()}}
+and \code{\link[=verify_fit]{verify_fit()}}.
 }
 \examples{
 funres_control()

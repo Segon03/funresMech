@@ -195,8 +195,8 @@ ui <- function() {
             ),
             bslib::accordion_panel(
               "Exponent z",
-              radioButtons("z_mode", .lab("Estimation of z", "Profile: z fixed at each grid value and the others optimised; the estimate is the minimum. Joint: z estimated with the other parameters, then profiled only around the estimate for the interval. Fixed: z held at a value (e.g. 1 for a type II response)."),
-                           c("Profile over a grid" = "profile", "Joint, then profile" = "joint",
+              radioButtons("z_mode", .lab("Estimation of z", "Profile: z fixed at each grid value and the others optimised; the estimate is the minimum. Joint (experimental): z estimated with the other parameters, then profiled only around the estimate; in validation its intervals under-covered the true z (67% vs 96% for the profile). Fixed: z held at a value (e.g. 1 for a type II response)."),
+                           c("Profile over a grid" = "profile", "Joint, then profile (experimental)" = "joint",
                              "Fixed" = "fixed")),
               conditionalPanel(
                 "input.z_mode == 'profile'",
@@ -227,8 +227,8 @@ ui <- function() {
                             "CMA-ES (package cmaes)" = "CMAES",
                             "CRS2 (package nloptr)" = "CRS2")),
               checkboxInput("widen", .lab("Widen bounds hit at the optimum", "If the optimum ends on a search bound, the bound is widened tenfold and the affected points refitted (up to twice)."), TRUE),
-              checkboxInput("crn", .lab("Common random numbers", "The same random seed in every evaluation during the search, so the objective is deterministic (but stepwise). Re-evaluations use fresh numbers."), FALSE),
-              checkboxInput("polish", .lab("Polish the optimum (Nelder-Mead)", "200 extra evaluations of a local search from the best point."), FALSE),
+              checkboxInput("crn", .lab("Common random numbers", "The same random seed in every evaluation during the search, so the objective is deterministic (but stepwise). Re-evaluations use fresh numbers. Default: in validation it made the optimiser far more reliable."), TRUE),
+              checkboxInput("polish", .lab("Polish the optimum (Nelder-Mead)", "200 extra evaluations of a local search from the best point. Default, together with common random numbers."), TRUE),
               numericInput("seed", .lab("Random seed", "Same seed and settings give the same results."), 1, min = 1, step = 1),
               bslib::input_switch("parallel", "Parallel computation", TRUE),
               conditionalPanel("input.parallel",

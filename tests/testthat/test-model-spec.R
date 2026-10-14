@@ -228,6 +228,15 @@ test_that("joint estimation of z with an adaptive profile for the interval", {
   expect_true(f$joint$z %in% f$profile$z)
   expect_equal(coef(f)[["z"]], f$profile$z[which.min(f$profile$nll)])
   expect_false(is.na(f$aic$AIC_restricted))
+  r <- reliability(f)
+  expect_equal(r$status[r$check == "Estimation of z by the validated method"], "warning")
+})
+
+test_that("defaults chosen in the phase 4 comparison: DEoptim + common random numbers + polish", {
+  ctl <- funres_control()
+  expect_equal(ctl$method, "DEoptim")
+  expect_true(ctl$crn)
+  expect_equal(ctl$polish, 200L)
 })
 
 test_that("alternative optimisers, common random numbers and polish run", {

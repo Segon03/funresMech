@@ -52,7 +52,11 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
   parasitados equivale al proceso depredador). Se implementa como
   `process = "predator"`.
 * D4: versión 1.2.0.
-* D5 (optimizadores) y D6 (presupuesto de cómputo): pendientes del piloto.
+* D5 (optimizadores), decidido tras la Fase 4: por defecto DEoptim con números
+  aleatorios comunes y pulido Nelder-Mead (200 evaluaciones); z por perfil;
+  la estimación conjunta queda como opción experimental (subcobertura 67%).
+  Detalle en `FASE4_resultados.md`.
+* D6 (presupuesto de cómputo): PC de 23-24 núcleos, hasta 4 días.
 
 ## Fase 1 (estado)
 

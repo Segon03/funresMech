@@ -24,6 +24,17 @@ NULL
 #'
 #' The final preset is the configuration of Okuyama (2026).
 #'
+#' **Default optimiser.** Differential evolution with common random numbers
+#' and a Nelder-Mead polish was chosen in a comparison of strategies with
+#' equal budgets on simulated data with known parameters (validation/,
+#' phase 4): it reached the best optimum found within 0.5 NLL units in 80% of
+#' the runs and never missed it by more than 2.2 units, whereas plain
+#' differential evolution (the method of version 1.1.0) reached it in 43% of
+#' the runs, CMA-ES in 78% (with occasional failures of up to 68 units) and
+#' CRS2 in 67%. Even the best strategy missed the best optimum in one run out
+#' of five with the exploratory budget: check every fit with [reliability()]
+#' and [verify_fit()].
+#'
 #' @param preset `"standard"` (default), `"exploratory"` or `"final"`.
 #' @param n_sim Simulated trials per host density for each evaluation of the
 #'   likelihood. Larger values reduce Monte Carlo noise.
@@ -42,12 +53,12 @@ NULL
 #'   package 'cmaes') or `"CRS2"` (controlled random search with local
 #'   mutation, package 'nloptr'). All use a budget of about `itermax * NP`
 #'   evaluations of the likelihood.
-#' @param crn Use common random numbers during the search: every evaluation
-#'   uses the same random seed, so the objective becomes deterministic in the
-#'   parameters (but piecewise constant). Re-evaluations at the optimum always
-#'   use fresh random numbers.
+#' @param crn Use common random numbers during the search (default): every
+#'   evaluation uses the same random seed, so the objective becomes
+#'   deterministic in the parameters (but piecewise constant). Re-evaluations
+#'   at the optimum always use fresh random numbers.
 #' @param polish Number of Nelder-Mead evaluations used to refine the best
-#'   point found by the global method (0 = none).
+#'   point found by the global method (default 200; 0 = none).
 #' @param bounds Named list of search bounds `c(lower, upper)` replacing the
 #'   defaults: `lambda` (encounter rate at the reference density, per unit
 #'   time), `h` (mean handling time, time units), `k`, `cv_h` (s / h) and `z`.
@@ -68,7 +79,7 @@ NULL
 funres_control <- function(preset = c("standard", "exploratory", "final"),
                            n_sim, itermax, NP, reltol, steptol, n_reeval,
                            method = "DEoptim", bounds = list(), widen = 2L,
-                           bb = TRUE, crn = FALSE, polish = 0L, cut = TRUE) {
+                           bb = TRUE, crn = TRUE, polish = 200L, cut = TRUE) {
   preset <- match.arg(preset)
   p <- switch(preset,
               exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
@@ -433,7 +444,11 @@ print.funres_control <- function(x, ...) {
 #'   computed only around the estimate, in steps of `z_step` (growing when the
 #'   profile is flat), until the 95% threshold is crossed on each side or the
 #'   search bounds of z are reached. The joint estimate is kept only if no
-#'   profile point has a lower NLL.
+#'   profile point has a lower NLL. **Experimental:** in simulations with
+#'   known parameters (validation/, phase 4) the joint method gave intervals
+#'   that covered the true z in 67% of the datasets, against 96% for the
+#'   profile, because with five free parameters the neighbouring profile
+#'   points are less well optimised. Confirm its results with the profile.
 #' @param z_step Initial step of the adaptive profile of the joint method.
 #' @param dens,response Names of the columns with host density and number of
 #'   hosts parasitized (prey consumed).
