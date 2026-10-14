@@ -126,3 +126,27 @@ Plan completo: `PLAN_respuesta_Okuyama.md` (carpeta `Okuyama_rev` y proyecto).
   presupuesto de evaluaciones (346-413 s).
 * Decisión (D6): Fases 4 y 5 en la PC de 23-24 núcleos, hasta 4 días de
   cómputo. Fase 4 (11_comparacion_optimizadores.R): ~7 h con 22 núcleos.
+
+## Fase 5: validación ampliada (script listo, 2026-10-14)
+
+* Antes de congelar el código: la grilla de z ahora también se extiende hacia
+  abajo (z = 0.25 y 0.1, dentro de la cota inferior de z) cuando el límite
+  inferior del intervalo queda abierto; nota nueva "lower limit of z not
+  identified / not reached within the grid". En la Fase 4, 2 de los 3
+  intervalos abiertos del perfil eran límites inferiores abiertos con z = 1.
+* `validation/R/12_validacion_ampliada.R` (reanudable, modo RAPIDO, la 1.1.0
+  en procesos aparte con callr y biblioteca propia):
+  - A: 45 escenarios (núcleo z {1, 1.75, 2.75} x k {0.2, 1, 5} x diseño
+    {64, 30 ensayos}; variaciones s/h = 1.5, h/T = 0.1, E = 5) x 8 conjuntos;
+    exploratory + verify_fit + NLL precisa en el estimado y en la verdad.
+    z verdadero fuera de la grilla (salvo z = 1).
+  - B: generación con búsqueda Weibull/Lognormal, manipulación Gamma,
+    depredador y heterogeneidad en a (k = 0.3; z = 1 y 2.25); ajuste por
+    defecto y correcto.
+  - C: exploratory, mejor de 3 (por punto, reevaluado sin sesgo) y standard.
+  - D: 1.1.0 frente a 1.2.0 (36 conjuntos simulados; D2 y D3 con 3 semillas).
+  - E: sensibilidad y especificidad de cada chequeo frente a no cobertura de
+    z y a falla de optimización (NLL precisa del estimado > verdad + 1).
+  - F: D2, D2 sin la fila 13 y D3 con preset final + verify_fit; AIC frente a
+    z = 1 y beta-binomial.
+  - Estimación: ~41 h con 22 núcleos (F usa 2 procesos por ajuste).
