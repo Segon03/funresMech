@@ -11,7 +11,7 @@ fit_funres(
   z_grid = seq(0.5, 5, by = 0.25),
   control = funres_control(),
   extend_z = TRUE,
-  z_extend = c(8, 10, 15, 20),
+  z_extend = c(0.1, 0.25, 8, 10, 15, 20),
   refine = TRUE,
   z_method = c("profile", "joint"),
   z_step = 0.25,
@@ -34,9 +34,12 @@ spans it). Ignored when \code{z} is fixed in \code{model}.}
 \item{control}{A \code{\link[=funres_control]{funres_control()}}.}
 
 \item{extend_z}{If the profile does not cross the 95\% threshold above the
-estimate, evaluate the values in \code{z_extend} as well.}
+estimate, evaluate the values of \code{z_extend} above the grid; if it does
+not cross it below the estimate, evaluate the values of \code{z_extend} below
+the grid (within the search bounds of z, by default \eqn{[0.1, 20]}).}
 
-\item{z_extend}{Extra values of z for \code{extend_z}.}
+\item{z_extend}{Extra values of z for \code{extend_z}. Values above the grid are
+used for an open upper limit and values below it for an open lower limit.}
 
 \item{refine}{Add grid points inside brackets wider than the grid step
 where the profile crosses the threshold.}

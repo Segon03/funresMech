@@ -275,3 +275,44 @@ test_that("a jagged profile (extra local minima) fails the regularity check", {
   expect_equal(r$status[r$check == "Profile of z regular (one minimum)"], "fail")
   expect_match(r$detail[r$check == "Profile of z regular (one minimum)"], "z = 2")
 })
+
+test_that("an open lower limit of z extends the grid downwards", {
+  # Deterministic stub of the point fit: the profile is a parabola in z.
+  make_point <- function(curv, z0) {
+    function(z, data_spp, T_exp, model, ctrl, bounds, H_ref,
+             z_free = FALSE, initialpop = NULL) {
+      nm <- c("lambda", "h", "k", "s")
+      v <- 100 + curv * (z - z0)^2
+      list(z = z, par = c(a = 1 / (T_exp * H_ref^z), h = 0.5, z = z, k = 1, s = 0.2),
+           theta = NULL, nll_opt = v, nll_reeval = v, nll_reeval_se = 0.01,
+           n_floor = 0L, at_bound = stats::setNames(rep(FALSE, 4), nm),
+           bound_side = stats::setNames(rep("", 4), nm), iter = 10, nfeval = 100,
+           late_gain = 0, spread = stats::setNames(rep(0.1, 4), nm), pop = NULL)
+    }
+  }
+  old <- future::plan(future::sequential)
+  on.exit(future::plan(old), add = TRUE)
+  ctrl <- funres_control("exploratory", widen = 0, bb = FALSE)
+  base <- list(datos, 24, z_grid = c(0.5, 1, 1.5), refine = FALSE, control = ctrl)
+
+  # minimum at the lowest grid value; crosses the threshold between 0.1 and 0.25
+  testthat::local_mocked_bindings(.fit_point = make_point(20, 0.5))
+  f <- do.call(fit_funres, base)
+  expect_true(f$extended)
+  expect_true(all(c(0.1, 0.25) %in% f$profile$z))
+  expect_false(f$ci$low_censored)
+  expect_gt(f$ci$z_low, 0.1); expect_lt(f$ci$z_low, 0.25)
+  expect_false(any(f$profile$z > 1.5))           # upper limit was closed
+
+  f0 <- do.call(fit_funres, c(base, list(extend_z = FALSE)))
+  expect_true(f0$ci$low_censored)
+  expect_true(any(grepl("not reached within the grid \\(z <= 0.5\\)", f0$notes)))
+
+  # flat towards z = 0: still open after the extension, not identified
+  testthat::local_mocked_bindings(.fit_point = make_point(0.5, 0))
+  f1 <- do.call(fit_funres, base)
+  expect_true(f1$ci$low_censored)
+  expect_equal(min(f1$profile$z), 0.1)
+  expect_true(any(grepl("not identified \\(profile flat down to z = 0.1\\)", f1$notes)))
+  expect_match(funresMech:::.low_open_text(0.5), "extend the z grid downwards")
+})

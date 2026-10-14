@@ -377,6 +377,16 @@ print.funres_control <- function(x, ...) {
   })
 }
 
+# Text for a lower limit of z that the profile does not cross.
+.low_open_text <- function(z_min, z_floor = 0.1) {
+  if (z_min <= z_floor) {
+    paste0("lower limit of z not identified (profile flat down to z = ", z_min, ")")
+  } else {
+    paste0("lower limit of z not reached within the grid (z <= ", z_min,
+           "); extend the z grid downwards")
+  }
+}
+
 # Text for an upper limit of z that the profile does not cross.
 .high_open_text <- function(z_max, z_cap = 20) {
   if (z_max >= z_cap) {
@@ -434,8 +444,11 @@ print.funres_control <- function(x, ...) {
 #'   spans it). Ignored when `z` is fixed in `model`.
 #' @param control A [funres_control()].
 #' @param extend_z If the profile does not cross the 95% threshold above the
-#'   estimate, evaluate the values in `z_extend` as well.
-#' @param z_extend Extra values of z for `extend_z`.
+#'   estimate, evaluate the values of `z_extend` above the grid; if it does
+#'   not cross it below the estimate, evaluate the values of `z_extend` below
+#'   the grid (within the search bounds of z, by default \eqn{[0.1, 20]}).
+#' @param z_extend Extra values of z for `extend_z`. Values above the grid are
+#'   used for an open upper limit and values below it for an open lower limit.
 #' @param refine Add grid points inside brackets wider than the grid step
 #'   where the profile crosses the threshold.
 #' @param z_method `"profile"` (default): z is fixed at each value of
@@ -471,8 +484,8 @@ print.funres_control <- function(x, ...) {
 #' @export
 fit_funres <- function(data, T, model = funres_model(),
                        z_grid = seq(0.5, 5, by = 0.25), control = funres_control(),
-                       extend_z = TRUE, z_extend = c(8, 10, 15, 20), refine = TRUE,
-                       z_method = c("profile", "joint"), z_step = 0.25,
+                       extend_z = TRUE, z_extend = c(0.1, 0.25, 8, 10, 15, 20),
+                       refine = TRUE, z_method = c("profile", "joint"), z_step = 0.25,
                        dens = "dens", response = "par", time_unit = "time units",
                        progress = NULL) {
   cl <- match.call()
@@ -519,8 +532,10 @@ fit_funres <- function(data, T, model = funres_model(),
   ci <- if (!z_fixed && nrow(prof) > 1) .profile_ci(prof$z, prof$nll) else NULL
 
   extended <- FALSE
-  if (isTRUE(extend_z) && !is.null(ci) && ci$high_censored) {
-    z_new <- z_extend[z_extend > max(prof$z)]
+  z_extend <- sort(unique(z_extend[z_extend >= bounds$z[1] & z_extend <= bounds$z[2]]))
+  if (isTRUE(extend_z) && !is.null(ci) && (ci$high_censored || ci$low_censored)) {
+    z_new <- c(if (ci$low_censored) z_extend[z_extend < min(prof$z)],
+               if (ci$high_censored) z_extend[z_extend > max(prof$z)])
     if (length(z_new) > 0) {
       prof <- rbind(prof, run(z_new))
       prof <- prof[order(prof$z), ]
@@ -600,11 +615,11 @@ fit_funres <- function(data, T, model = funres_model(),
   if (!is.null(ci) && ci$high_censored)
     notes <- c(notes, paste0(
       "The profile does not cross the 95% threshold above z_hat: ",
-      .high_open_text(max(prof$z), max(z_extend)), "."))
+      .high_open_text(max(prof$z), max(c(z_extend, fit$bounds$z[2]))), "."))
   if (!is.null(ci) && ci$low_censored)
     notes <- c(notes, paste0(
-      "The profile does not cross the 95% threshold below z_hat: the lower ",
-      "limit of z is <= ", min(prof$z), "."))
+      "The profile does not cross the 95% threshold below z_hat: ",
+      .low_open_text(min(prof$z), fit$bounds$z[1]), "."))
   if (is.finite(prof$n_floor[i_best]) && prof$n_floor[i_best] > 0)
     notes <- c(notes, paste0(
       prof$n_floor[i_best], " observed outcome(s) were never produced by the ",
@@ -688,7 +703,7 @@ logLik.funres_fit <- function(object, ...) {
 # Wrapper kept for the shiny application (version 1.1.0 interface)
 fit_profile <- function(data_spp, T_exp, z_grid, n_sim = 3000, itermax = 50,
                         NP = 40, reltol = 1e-2, n_reeval = 3L,
-                        extend_z = TRUE, z_extend = c(8, 10, 15, 20),
+                        extend_z = TRUE, z_extend = c(0.1, 0.25, 8, 10, 15, 20),
                         refine = TRUE, model = funres_model(), bounds = list()) {
   ctrl <- funres_control("exploratory", n_sim = n_sim, itermax = itermax, NP = NP,
                          n_reeval = n_reeval, bounds = bounds)

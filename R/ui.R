@@ -204,7 +204,7 @@ ui <- function() {
                     div(class = "col", numericInput("z_min", "From", 0.5, step = 0.1)),
                     div(class = "col", numericInput("z_max", "To", 5, step = 0.1)),
                     div(class = "col", numericInput("z_step", "Step", 0.25, min = 0.01, step = 0.05))),
-                checkboxInput("extend_z", .lab("Extend the grid if the upper limit is open", "Evaluates z = 8, 10, 15 and 20 when the profile does not cross the 95% threshold above the estimate."), TRUE)
+                checkboxInput("extend_z", .lab("Extend the grid if a limit is open", "Evaluates z = 8, 10, 15 and 20 when the profile does not cross the 95% threshold above the estimate, and z = 0.25 and 0.1 when it does not cross it below."), TRUE)
               ),
               conditionalPanel("input.z_mode == 'joint'",
                                numericInput("z_step_joint", "Initial step of the profile", 0.25, min = 0.01)),
