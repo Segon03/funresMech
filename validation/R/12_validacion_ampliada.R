@@ -232,7 +232,9 @@ seg_pt <- 200
 cat(sprintf("Trabajos: %d en total, %d pendientes; %d núcleos.\n", nrow(trabajos), nrow(pend), N_WORKERS))
 if (nrow(pend))
   print(aggregate(cbind(trabajos = 1, horas = costo * seg_pt / 3600) ~ brazo, pend, sum), digits = 3)
-if (nrow(pend)) {
+if (nrow(pend) && RAPIDO) {
+  cat("Prueba rápida (RAPIDO): ~15-30 min. Las horas de la tabla corresponden a la corrida completa.\n")
+} else if (nrow(pend)) {
   costo_nucleo <- ifelse(pend$brazo == "F", pend$costo * N_INTERNOS_F, pend$costo)
   cat(sprintf("Duración estimada: %.0f h (el trabajo más largo: %.0f h). Orientativa: puede variar +-30%%.\n",
               max(sum(costo_nucleo) * seg_pt / 3600 / N_WORKERS, max(pend$costo) * seg_pt / 3600),
