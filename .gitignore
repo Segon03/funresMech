@@ -25,3 +25,4 @@ Thumbs.db
 # Salidas de prueba (modo RAPIDO) de la validación
 validation/results/*_rapido/
 validation/tablas/*_rapido.csv
+validation/results/fase5/
