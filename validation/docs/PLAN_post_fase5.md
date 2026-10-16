@@ -11,10 +11,11 @@ Carpeta: `Okuyama_rev/funresMech_dev`, rama `revision-okuyama`. Nada se sube a G
 |---|---|
 | 0. Línea base y puerta de regresión | Hecha. El modelo por defecto reproduce la 1.1.0 bit a bit (D3, NLL 132.04994217). |
 | 1. Motor con distribuciones elegibles | Hecha. Familias en C++, muestreadores propios en R y en C++, parámetros fijos y modo depredador. |
-| 2. Unidades, cotas y nombres | Hecha. Tiempo en unidades de T, cotas por defecto independientes de la unidad, ampliación automática de cotas y título sin "Okuyama model". **Falta** un test de invarianza de la unidad del ajuste completo (solo existe para el screening). |
+| 2. Unidades, cotas y nombres | Hecha. Tiempo en unidades de T, cotas por defecto independientes de la unidad, ampliación automática de cotas y título sin "Okuyama model". Test de invarianza de la unidad del ajuste completo (horas frente a minutos) agregado el 2026-10-16. |
 | 3. Diagnósticos de fiabilidad | Hecha en código. `reliability()` y `verify_fit()`, con acción por chequeo. **Umbrales provisorios**: se calibran en el Paso 3. |
 | 4. Optimizadores y z conjunta | Hecha. Por defecto, DEoptim con números aleatorios comunes y pulido; la z conjunta queda como opción experimental. No se evaluó ABC (ver D7). |
-| 5. Validación ampliada | **Corrida terminada** el 2026-10-16: 679 de 679 trabajos, sin errores, 14 tablas. Falta verificar e interpretar. |
+| 5. Validación ampliada | Corrida terminada, verificada e interpretada (`FASE5_resultados.md`). Cobertura 86.7%; con correcciones sobre los datos guardados, 90.3%. |
+| 5b. D11 y confirmación | **D11 implementado** (2026-10-16): re-evaluación adaptativa del piso, refinamiento local, spline. 389 tests pasan. Script `15_confirmacion_fase5b.R` probado en modo RAPIDO; falta la corrida larga (~1.3 días en la PC de 23 núcleos) y congelar `v1.2.0-rc1`. |
 | 6. Interfaz Shiny | Hecha. Solo con `testServer`, sin `shinytest2`. |
 | 7. Documentación | Pendiente. NEWS sin la 1.2.0, README viejo, sin viñetas. |
 | 8. Manuscrito | Pendiente. |
