@@ -187,3 +187,22 @@ Lectura:
 | D10 (preset por defecto) | Mantener standard por defecto (ya lo es) y exploratory solo para una primera mirada; está justificado por C. |
 | D7 (ABC) | Justificarlo en el texto. Este análisis no cambia esa recomendación. |
 | H18 (umbrales) | Recalibrar con la Fase 5b, usando el percentil 90 de los ajustes buenos como umbral de advertencia. |
+
+---
+
+## 5. Correcciones sobre los datos guardados (script 14, sin reajustar)
+
+Se re-evaluó, con 4 veces `n_sim` (hasta 3 rondas) y en los parámetros ya estimados, cada punto del perfil que había tocado el piso de probabilidad (65 puntos, 33 ajustes de 360). Después se recalculó el IC de z.
+
+| z verdadero | Actual | Sin puntos con piso | Re-evaluado, lineal | Re-evaluado, spline |
+|---|---|---|---|---|
+| 1 | 91.7% | 92.5% | 94.2% | 90.8% |
+| 1.75 | 76.7% | 78.3% | 80.0% | 85.0% |
+| 2.75 | 91.7% | 92.5% | 91.7% | 95.0% |
+| **Global** | **86.7%** | 87.8% | 88.6% | **90.3%** |
+
+- La re-evaluación resuelve el piso en 31 de 33 ajustes (persiste en 2). La mejora de cobertura es la misma que al descartar los puntos, así que la re-evaluación es una alternativa válida y no pierde información.
+- El spline suma ~2 puntos, sobre todo a z = 1.75. A z = 1 no ayuda (94 → 91%), dentro del error de 120 ajustes por escenario (IC de Wilson de ±5 puntos).
+- **No llega a 95%.** z = 1.75 sigue en 85%. Con lo guardado no se puede mejorar más, porque faltan puntos de perfil cerca de z_hat y de los cruces del umbral. Eso lo corrige D11(b).
+
+**Chequeos (H18).** Con la cobertura corregida y "bueno" = IC cubre, déficit ≤ 1 y |error de z| ≤ 1 (307 buenos, 53 malos), el AUC de los 12 chequeos va de 0.43 a 0.63: ninguno discrimina bien. Es esperable para la cobertura, porque en cada ajuste la probabilidad de que el IC no cubra es ~5% por azar y no deja huella en la optimización. Además, A usó el preset `exploratory`, y chequeos como "Optimiser settled" o "Independent runs agree" dependen del preset. Recalibrar con estos datos mezclaría el preset con la calidad del ajuste. **La recalibración se hace con la Fase 5b usando el preset `standard`,** que es el que se recomienda para informar.
