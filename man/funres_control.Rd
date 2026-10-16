@@ -18,7 +18,8 @@ funres_control(
   bb = TRUE,
   crn = TRUE,
   polish = 200L,
-  cut = TRUE
+  cut = TRUE,
+  floor_retry = 2L
 )
 }
 \arguments{
@@ -69,6 +70,13 @@ point found by the global method (default 200; 0 = none).}
 
 \item{cut}{Stop each simulated trial once all hosts have been attacked
 (exact; only saves time).}
+
+\item{floor_retry}{Maximum number of times the re-evaluations at an
+optimum are repeated with four times more simulated trials when an
+observed outcome was never produced by the simulation (probability
+floor, which adds 708 NLL units). Such a zero is usually Monte Carlo
+noise in the tail of a distribution; more simulations resolve it. A point
+where it persists is flagged and left out of the interval of z.}
 }
 \value{
 An object of class \code{funres_control}.

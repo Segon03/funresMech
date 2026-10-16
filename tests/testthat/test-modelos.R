@@ -271,10 +271,70 @@ test_that(".refine_points() agrega puntos solo dentro de un intervalo ancho", {
   z <- c(1, 1.5, 2, 2.5, 3, 4, 5, 8)
   nuevos <- funresMech:::.refine_points(z, z_low = 1.53, z_high = 5.12, step0 = 0.5)
   expect_equal(nuevos, c(5.5, 6, 6.5, 7, 7.5))
-  # un limite en un intervalo de ancho normal (2, 2.5) no agrega nada
-  expect_length(funresMech:::.refine_points(z, z_low = 1.53, z_high = 2.2, step0 = 0.5), 0)
   # limites abiertos (NA): nada que refinar
   expect_length(funresMech:::.refine_points(z, NA_real_, NA_real_, 0.5), 0)
+})
+
+test_that(".refine_points() afina un intervalo angosto hasta ~1/4 de su ancho", {
+  z <- seq(0.5, 5, by = 0.5)
+  # intervalo [1.53, 2.2]: ancho 0.67 -> paso 0.15; los tramos (1.5, 2) y (2, 2.5) se subdividen
+  nuevos <- funresMech:::.refine_points(z, z_low = 1.53, z_high = 2.2, step0 = 0.5)
+  expect_true(length(nuevos) > 0)
+  expect_true(all(nuevos > 1.5 & nuevos < 2.5))
+  expect_true(max(diff(sort(c(z, nuevos))[sort(c(z, nuevos)) >= 1.5 & sort(c(z, nuevos)) <= 2.5])) <= 0.31)
+  # tambien alrededor del minimo
+  cerca <- funresMech:::.refine_points(z, z_low = 1.53, z_high = 2.2, step0 = 0.5, z_hat = 3)
+  expect_true(any(cerca > 2.5 & cerca < 3.5))
+  # nunca por debajo de 0.05 y con tope de puntos nuevos
+  expect_true(all(diff(sort(c(z, funresMech:::.refine_points(z, 1.99, 2.01, 0.5)))) >= 0.05 - 1e-9))
+  expect_lte(length(funresMech:::.refine_points(z, 1.5, 4.5, 0.5, max_new = 3, z_hat = 3)), 3)
+})
+
+test_that(".profile_ci() con spline no se pasa de los puntos y coincide con el exacto", {
+  z <- seq(0.5, 5, by = 0.5)
+  nll <- 100 + (z - 2.3)^2 * 1.3                      # cuadratico: limites en 2.3 +/- sqrt(1.92 / 1.3)
+  lin <- funresMech:::.profile_ci(z, nll)
+  spl <- funresMech:::.profile_ci(z, nll, interpolate = "spline")
+  exacto <- 2.3 + c(-1, 1) * sqrt(funresMech:::.umbral_ic95() / 1.3)
+  expect_lt(max(abs(c(spl$z_low, spl$z_high) - exacto)), max(abs(c(lin$z_low, lin$z_high) - exacto)))
+  expect_equal(spl$z_hat, 2.5)
+  expect_equal(spl$min_nll, min(nll))
+  # un perfil que no cruza sigue abierto
+  plano <- funresMech:::.profile_ci(z, rep(100, length(z)), interpolate = "spline")
+  expect_true(plano$low_censored && plano$high_censored)
+})
+
+test_that(".ci_profile() deja fuera los puntos con piso de probabilidad", {
+  prof <- data.frame(z = seq(1, 5, by = 1), nll = c(112, 101, 100, 101.5, 740),
+                     n_floor = c(0L, 0L, 0L, 0L, 1L))
+  ci <- funresMech:::.ci_profile(prof)
+  # sin el punto con piso, el perfil no cruza el umbral por arriba (5 queda fuera)
+  expect_true(ci$high_censored)
+  expect_equal(ci$z_hat, 3)
+  # con todos los puntos con piso no se puede calcular sin ellos: se usan todos
+  prof$n_floor[] <- 1L
+  expect_false(is.null(funresMech:::.ci_profile(prof)))
+})
+
+test_that("floor_retry repite las reevaluaciones con mas simulaciones cuando se toca el piso", {
+  ctrl0 <- funres_control("exploratory", floor_retry = 0)
+  expect_equal(ctrl0$floor_retry, 0L)
+  expect_equal(funres_control()$floor_retry, 2L)
+  llamadas <- integer(0)
+  fake_nll <- function(par, model, data_spp, T, n_sim, cut = TRUE, detail = FALSE) {
+    if (!detail) return(100)
+    llamadas <<- c(llamadas, n_sim)
+    # el piso solo se toca con n_sim chico: con 4x ya se resuelve
+    list(nll = 100, n_floor = if (n_sim < 4 * 300) 1L else 0L)
+  }
+  testthat::local_mocked_bindings(.nll_sim = fake_nll, .package = "funresMech")
+  d <- data.frame(dens = rep(c(5, 10), each = 3), par = c(1, 2, 2, 3, 4, 4))
+  ctrl <- funres_control("exploratory", n_sim = 300, itermax = 3, NP = 8, n_reeval = 2, polish = 0)
+  p <- funresMech:::.fit_point(1.5, d, 24, funres_model(), ctrl, funresMech:::.make_bounds(list(), 24),
+                               funresMech:::.h_ref(d))
+  expect_equal(p$n_floor, 0L)
+  expect_equal(p$n_retry, 1L)
+  expect_true(1200 %in% llamadas)
 })
 
 test_that(".nll_at_z() interpola linealmente y devuelve NA fuera de la grilla", {
@@ -391,4 +451,22 @@ test_that(".workers_ok() is TRUE under a sequential plan", {
   old <- future::plan(future::sequential)
   on.exit(future::plan(old), add = TRUE)
   expect_true(funresMech:::.workers_ok())
+})
+
+test_that("el ajuste completo no depende de la unidad de tiempo (horas frente a minutos)", {
+  d <- data.frame(dens = rep(c(3, 6, 12, 24), each = 4),
+                  par  = c(0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 6, 8, 10, 12))
+  ctrl <- funres_control("exploratory", n_sim = 300, itermax = 6, NP = 12, n_reeval = 2,
+                         polish = 20, bb = FALSE, widen = 0)
+  ajusta <- function(T) {
+    set.seed(123)
+    fit_funres(d, T = T, z_grid = c(1, 2, 3), control = ctrl, extend_z = FALSE, refine = FALSE)
+  }
+  h <- ajusta(24); m <- ajusta(24 * 60)
+  expect_equal(h$profile$nll, m$profile$nll, tolerance = 1e-8)
+  expect_equal(h$par[["z"]], m$par[["z"]])
+  expect_equal(unname(m$par[["h"]]), unname(h$par[["h"]]) * 60, tolerance = 1e-6)
+  expect_equal(unname(m$par[["a"]]), unname(h$par[["a"]]) / 60, tolerance = 1e-6)
+  expect_equal(h$profile$k, m$profile$k, tolerance = 1e-8)
+  expect_equal(unname(m$par[["s"]]), unname(h$par[["s"]]) * 60, tolerance = 1e-6)
 })

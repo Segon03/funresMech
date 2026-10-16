@@ -15,13 +15,26 @@
 #'
 #' @param z_grid evaluated values of z (sorted).
 #' @param nll_vals NLL minimised at each value of z_grid.
+#' @param interpolate `"linear"` (between neighbouring points) or `"spline"`
+#'   (monotone Hermite spline, which does not overshoot between points; the
+#'   limits are then searched on a grid of step 0.01).
 #' @return list(z_hat, z_low, z_high, low_censored, high_censored,
 #'   threshold, min_nll). A side is "censored" when the profile never
 #'   crosses the threshold on that side within the grid: the real limit is
 #'   then <= min(z_grid) or >= max(z_grid).
 #' @noRd
-.profile_ci <- function(z_grid, nll_vals) {
+.profile_ci <- function(z_grid, nll_vals, interpolate = c("linear", "spline")) {
   stopifnot(length(z_grid) == length(nll_vals), !is.unsorted(z_grid))
+  interpolate <- match.arg(interpolate)
+  if (interpolate == "spline" && length(z_grid) >= 3) {
+    f <- stats::splinefun(z_grid, nll_vals, method = "monoH.FC")
+    zz <- sort(unique(c(z_grid, seq(min(z_grid), max(z_grid), by = 0.01))))
+    ci <- .profile_ci(zz, f(zz), "linear")
+    ci$z_hat <- z_grid[which.min(nll_vals)]
+    ci$min_nll <- min(nll_vals)
+    ci$threshold <- ci$min_nll + .umbral_ic95()
+    return(ci)
+  }
   min_nll   <- min(nll_vals)
   idx_min   <- which.min(nll_vals)
   threshold <- min_nll + .umbral_ic95()

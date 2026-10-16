@@ -70,6 +70,12 @@ NULL
 #'   value (Okuyama 2026) and report its AIC.
 #' @param cut Stop each simulated trial once all hosts have been attacked
 #'   (exact; only saves time).
+#' @param floor_retry Maximum number of times the re-evaluations at an
+#'   optimum are repeated with four times more simulated trials when an
+#'   observed outcome was never produced by the simulation (probability
+#'   floor, which adds 708 NLL units). Such a zero is usually Monte Carlo
+#'   noise in the tail of a distribution; more simulations resolve it. A point
+#'   where it persists is flagged and left out of the interval of z.
 #' @return An object of class `funres_control`.
 #' @examples
 #' funres_control()
@@ -79,7 +85,8 @@ NULL
 funres_control <- function(preset = c("standard", "exploratory", "final"),
                            n_sim, itermax, NP, reltol, steptol, n_reeval,
                            method = "DEoptim", bounds = list(), widen = 2L,
-                           bb = TRUE, crn = TRUE, polish = 200L, cut = TRUE) {
+                           bb = TRUE, crn = TRUE, polish = 200L, cut = TRUE,
+                           floor_retry = 2L) {
   preset <- match.arg(preset)
   p <- switch(preset,
               exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
@@ -98,7 +105,7 @@ funres_control <- function(preset = c("standard", "exploratory", "final"),
   structure(c(list(preset = preset), p,
               list(method = method, bounds = bounds, widen = as.integer(widen),
                    bb = isTRUE(bb), crn = isTRUE(crn), polish = as.integer(polish),
-                   cut = isTRUE(cut))),
+                   cut = isTRUE(cut), floor_retry = max(0L, as.integer(floor_retry)))),
             class = "funres_control")
 }
 
@@ -226,6 +233,19 @@ print.funres_control <- function(x, ...) {
     .nll_sim(par, model, data_spp, T_exp, ctrl$n_sim, ctrl$cut, detail = TRUE))
   reevals <- vapply(re, function(r) if (is.list(r)) r$nll else r, numeric(1))
   n_floor <- max(vapply(re, function(r) if (is.list(r)) r$n_floor else NA_integer_, 0L))
+  # An observed outcome that the simulation never produced adds 708 NLL units.
+  # Usually it is Monte Carlo noise in a tail: repeat the re-evaluations with
+  # four times more trials (at most floor_retry times).
+  n_retry <- 0L
+  n_sim_re <- ctrl$n_sim
+  while (is.finite(n_floor) && n_floor > 0 && n_retry < (if (is.null(ctrl$floor_retry)) 0L else ctrl$floor_retry)) {
+    n_retry <- n_retry + 1L
+    n_sim_re <- n_sim_re * 4L
+    re <- lapply(seq_len(ctrl$n_reeval), function(i)
+      .nll_sim(par, model, data_spp, T_exp, n_sim_re, ctrl$cut, detail = TRUE))
+    reevals <- vapply(re, function(r) if (is.list(r)) r$nll else r, numeric(1))
+    n_floor <- max(vapply(re, function(r) if (is.list(r)) r$n_floor else NA_integer_, 0L))
+  }
 
   rng <- ptab$upper - ptab$lower
   at_lower <- (theta <= ptab$lower + 0.01 * rng) & !ptab$natural_lower
@@ -244,7 +264,7 @@ print.funres_control <- function(x, ...) {
        nll_reeval = mean(reevals),
        nll_reeval_se = if (length(reevals) > 1) stats::sd(reevals) / sqrt(length(reevals))
                        else NA_real_,
-       n_floor = n_floor,
+       n_floor = n_floor, n_retry = n_retry,
        at_bound = at_bound, bound_side = bound_side, iter = it, nfeval = res$nfeval,
        late_gain = late_gain, spread = stats::setNames(spread, ptab$name), pop = pop)
 }
@@ -310,7 +330,7 @@ print.funres_control <- function(x, ...) {
                bound_names = if (any(p$at_bound))
                  paste0(names(p$at_bound)[p$at_bound], "(", p$bound_side[p$at_bound],
                         ")", collapse = ",") else "",
-               n_floor = p$n_floor, iter = p$iter, late_gain = p$late_gain,
+               n_floor = p$n_floor, n_retry = if (is.null(p$n_retry)) 0L else p$n_retry, iter = p$iter, late_gain = p$late_gain,
                max_spread = suppressWarnings(max(p$spread, na.rm = TRUE)),
                stringsAsFactors = FALSE)
   }))
@@ -397,19 +417,42 @@ print.funres_control <- function(x, ...) {
   }
 }
 
-# Extra values of z inside a bracket where the profile crosses the 95%
-# threshold, when that bracket is wider than the base grid step.
-.refine_points <- function(z, z_low, z_high, step0, max_new = 12) {
+# Extra values of z to resolve the interval. Inside each bracket where the
+# profile crosses the 95% threshold, and in the two grid cells next to the
+# minimum, points are added so that the spacing is at most `step`, which is
+# the base grid step or, for a narrow interval, a quarter of its width (never
+# below 0.05). The linear or spline interpolation between distant points is
+# the main source of error of the limits.
+.refine_points <- function(z, z_low, z_high, step0, max_new = 12, z_hat = NA_real_) {
+  width <- if (is.finite(z_low) && is.finite(z_high)) z_high - z_low else NA_real_
+  step <- if (is.finite(width)) max(0.05, min(step0, round(width / 4 / 0.05) * 0.05)) else step0
+  fill <- function(za, zb) {
+    if (zb - za <= 1.5 * step) return(numeric(0))
+    cand <- seq(za + step, zb - 0.5 * step, by = step)
+    cand[cand > za + 0.5 * step]
+  }
   bracket_points <- function(zc) {
     if (is.na(zc) || !any(z < zc) || !any(z >= zc)) return(numeric(0))
-    za <- max(z[z < zc]); zb <- min(z[z >= zc])
-    if (zb - za <= 1.5 * step0) return(numeric(0))
-    cand <- seq(za + step0, zb - 0.5 * step0, by = step0)
-    cand[cand > za + 0.5 * step0]
+    fill(max(z[z < zc]), min(z[z >= zc]))
   }
-  new <- sort(unique(round(c(bracket_points(z_low), bracket_points(z_high)), 10)))
+  around_hat <- function() {
+    if (!is.finite(z_hat)) return(numeric(0))
+    c(if (any(z < z_hat)) fill(max(z[z < z_hat]), z_hat),
+      if (any(z > z_hat)) fill(z_hat, min(z[z > z_hat])))
+  }
+  new <- sort(unique(round(c(bracket_points(z_low), bracket_points(z_high), around_hat()), 10)))
   new <- new[!new %in% round(z, 10)]
   utils::head(new, max_new)
+}
+
+# Interval of z from the profile points that are usable: points where an
+# observed outcome was never simulated (probability floor) even after the
+# retries are left out, because their NLL is inflated by 708 units. The
+# limits are found on a monotone spline through the points.
+.ci_profile <- function(prof) {
+  ok <- is.na(prof$n_floor) | prof$n_floor == 0
+  if (sum(ok) < 2) ok <- rep(TRUE, nrow(prof))
+  .profile_ci(prof$z[ok], prof$nll[ok], interpolate = "spline")
 }
 
 #' Fit the mechanistic functional response model
@@ -529,7 +572,7 @@ fit_funres <- function(data, T, model = funres_model(),
   } else {
     prof <- run(z_grid)
   }
-  ci <- if (!z_fixed && nrow(prof) > 1) .profile_ci(prof$z, prof$nll) else NULL
+  ci <- if (!z_fixed && nrow(prof) > 1) .ci_profile(prof) else NULL
 
   extended <- FALSE
   z_extend <- sort(unique(z_extend[z_extend >= bounds$z[1] & z_extend <= bounds$z[2]]))
@@ -539,19 +582,19 @@ fit_funres <- function(data, T, model = funres_model(),
     if (length(z_new) > 0) {
       prof <- rbind(prof, run(z_new))
       prof <- prof[order(prof$z), ]
-      ci <- .profile_ci(prof$z, prof$nll)
+      ci <- .ci_profile(prof)
       extended <- TRUE
     }
   }
   refined <- FALSE
-  if (isTRUE(refine) && !is.null(ci)) {
-    z_new <- .refine_points(prof$z, ci$z_low, ci$z_high, step0)
-    if (length(z_new) > 0) {
-      prof <- rbind(prof, run(z_new))
-      prof <- prof[order(prof$z), ]
-      ci <- .profile_ci(prof$z, prof$nll)
-      refined <- TRUE
-    }
+  for (round in seq_len(if (isTRUE(refine)) 2L else 0L)) {
+    if (is.null(ci)) break
+    z_new <- .refine_points(prof$z, ci$z_low, ci$z_high, step0, z_hat = ci$z_hat)
+    if (length(z_new) == 0) break
+    prof <- rbind(prof, run(z_new))
+    prof <- prof[order(prof$z), ]
+    ci <- .ci_profile(prof)
+    refined <- TRUE
   }
   rownames(prof) <- NULL
 
@@ -571,7 +614,7 @@ fit_funres <- function(data, T, model = funres_model(),
     prof <- rbind(prof[!redo, , drop = FALSE], run(prof$z[redo]))
     prof <- prof[order(prof$z), ]
     rownames(prof) <- NULL
-    if (!is.null(ci)) ci <- .profile_ci(prof$z, prof$nll)
+    if (!is.null(ci)) ci <- .ci_profile(prof)
   }
 
   i_best <- which.min(prof$nll)
@@ -612,6 +655,12 @@ fit_funres <- function(data, T, model = funres_model(),
       "k is very small (", signif(prof$k[i_best], 2), "): search times are ",
       "extremely variable and z is weakly identified from above (ridge ",
       "between z and k)."))
+  n_drop <- sum(prof$n_floor > 0, na.rm = TRUE)
+  if (n_drop > 0 && !(is.finite(prof$n_floor[i_best]) && prof$n_floor[i_best] > 0))
+    notes <- c(notes, paste0(
+      n_drop, " profile point(s) had observed outcomes never produced by the ",
+      "simulation, even after repeating the re-evaluation with more trials; ",
+      "they are left out of the interval of z."))
   if (!is.null(ci) && ci$high_censored)
     notes <- c(notes, paste0(
       "The profile does not cross the 95% threshold above z_hat: ",

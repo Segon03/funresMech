@@ -43,12 +43,18 @@ reliability <- function(fit) {
   rows <- list()
 
   nf <- prof$n_floor[i]
+  nf_other <- if (nrow(prof) > 1) sum(prof$n_floor[-i] > 0, na.rm = TRUE) else 0L
   rows$floor <- .rel_row(
     "Observed outcomes produced by the simulation",
-    if (is.finite(nf) && nf > 0) "fail" else "ok", nf,
+    if (is.finite(nf) && nf > 0) "fail" else if (nf_other > 0) "warning" else "ok",
+    if (is.finite(nf)) nf + nf_other else NA_real_,
     if (is.finite(nf) && nf > 0) paste(nf, "observed outcome(s) never simulated at the optimum")
+    else if (nf_other > 0)
+      paste(nf_other, "profile point(s) had observed outcomes never simulated, even after repeating",
+            "the re-evaluation with more trials; they are left out of the interval of z")
     else "all observed outcomes have simulated probability > 0",
-    if (is.finite(nf) && nf > 0) "Increase n_sim; check atypical trials; check that the model can produce these outcomes." else "")
+    if ((is.finite(nf) && nf > 0) || nf_other > 0)
+      "Increase n_sim; check atypical trials; check that the model can produce these outcomes." else "")
 
   rows$bound <- .rel_row(
     "Estimates away from search bounds",
