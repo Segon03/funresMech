@@ -26,3 +26,5 @@ Thumbs.db
 validation/results/*_rapido/
 validation/tablas/*_rapido.csv
 validation/results/fase5/
+validation/results/fase5b/
+validation/results/fase5b_rapido/
