@@ -60,10 +60,10 @@ Salvo que se indique otra cosa, todos los números de A a E son del preset **exp
 
 Recalculé el IC sobre **los mismos perfiles** (tabla `fase5_analisis_A_cobertura_alternativas.csv`):
 
-| | Actual | Sin los puntos con piso | Sin piso y con spline monótona |
+| | Actual | Sin los puntos con piso | Sin piso y con spline PCHIP |
 |---|---|---|---|
-| Global | 86.7% | 87.8% | **90.6%** |
-| z = 1.75 | 76.7% | 78.3% | 85.8% |
+| Global | 86.7% | 87.8% | **91.7%** |
+| z = 1.75 | 76.7% | 78.3% | 86.7% |
 
 Esto no basta para llegar al 95%, porque la spline no puede recuperar la forma del perfil entre puntos separados 0.5. Hacen falta **más puntos alrededor del mínimo y de los cruces del umbral**. Eso requiere volver a ajustar.
 
