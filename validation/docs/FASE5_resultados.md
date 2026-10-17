@@ -196,14 +196,14 @@ Se re-evaluó, con 4 veces `n_sim` (hasta 3 rondas) y en los parámetros ya esti
 
 | z verdadero | Actual | Sin puntos con piso | Re-evaluado, lineal | Re-evaluado, spline |
 |---|---|---|---|---|
-| 1 | 91.7% | 92.5% | 94.2% | 90.8% |
-| 1.75 | 76.7% | 78.3% | 80.0% | 85.0% |
+| 1 | 91.7% | 92.5% | 94.2% | 94.2% |
+| 1.75 | 76.7% | 78.3% | 80.0% | 86.7% |
 | 2.75 | 91.7% | 92.5% | 91.7% | 95.0% |
-| **Global** | **86.7%** | 87.8% | 88.6% | **90.3%** |
+| **Global** | **86.7%** | 87.8% | 88.6% | **91.9%** |
 
 - La re-evaluación resuelve el piso en 31 de 33 ajustes (persiste en 2). La mejora de cobertura es la misma que al descartar los puntos, así que la re-evaluación es una alternativa válida y no pierde información.
-- El spline suma ~2 puntos, sobre todo a z = 1.75. A z = 1 no ayuda (94 → 91%), dentro del error de 120 ajustes por escenario (IC de Wilson de ±5 puntos).
-- **No llega a 95%.** z = 1.75 sigue en 85%. Con lo guardado no se puede mejorar más, porque faltan puntos de perfil cerca de z_hat y de los cruces del umbral. Eso lo corrige D11(b).
+- La interpolación por spline (PCHIP) suma ~3 puntos, sobre todo a z = 1.75 (80 → 87%).
+- **No llega a 95%.** z = 1.75 sigue en 87%. Con lo guardado no se puede mejorar más, porque faltan puntos de perfil cerca de z_hat y de los cruces del umbral. Eso lo corrige D11(b).
 
 **Chequeos (H18).** Con la cobertura corregida y "bueno" = IC cubre, déficit ≤ 1 y |error de z| ≤ 1 (307 buenos, 53 malos), el AUC de los 12 chequeos va de 0.43 a 0.63: ninguno discrimina bien. Es esperable para la cobertura, porque en cada ajuste la probabilidad de que el IC no cubra es ~5% por azar y no deja huella en la optimización. Además, A usó el preset `exploratory`, y chequeos como "Optimiser settled" o "Independent runs agree" dependen del preset. Recalibrar con estos datos mezclaría el preset con la calidad del ajuste. **La recalibración se hace con la Fase 5b usando el preset `standard`,** que es el que se recomienda para informar.
 
@@ -215,7 +215,7 @@ Se re-evaluó, con 4 veces `n_sim` (hasta 3 rondas) y en los parámetros ya esti
 
 1. **Reevaluación adaptativa del piso.** Si una reevaluación en el óptimo toca el piso de probabilidad, se repite con 4 veces `n_sim` (hasta 2 veces, `funres_control(floor_retry = 2)`). Si persiste, el punto se marca y queda fuera del IC. `reliability()` mira ahora todo el perfil: falla si el piso está en el óptimo y advierte si está en otros puntos.
 2. **Refinamiento local.** Se agregan puntos en los dos tramos donde el perfil cruza el umbral y en las dos celdas vecinas al mínimo, hasta que el paso sea ≤ 1/4 del ancho del intervalo (nunca menor de 0.05), en hasta 2 rondas.
-3. **Spline monótona** (Fritsch–Carlson) en vez de interpolación lineal para hallar los límites.
+3. **Interpolación PCHIP** (Hermite cúbica que preserva la forma, Fritsch–Butland) en vez de lineal para hallar los límites.
 4. **Test de invariancia a la unidad de tiempo** del ajuste completo (horas frente a minutos): mismo perfil y parámetros escalados.
 
 **Costo medido** en 2 conjuntos reales de la Fase 5: 10 → 13 y 10 → 18 puntos de perfil (+30% y +80%), dentro de lo estimado (+40–60%). Los tiempos de pared no son comparables con los de la Fase 5 (otra máquina).
@@ -225,10 +225,14 @@ Se re-evaluó, con 4 veces `n_sim` (hasta 3 rondas) y en los parámetros ya esti
 | Alternativa | Cobertura | Decisión |
 |---|---|---|
 | Interpolación lineal | 87.8% | Reemplazada |
-| Spline monótona | **90.6%** | **Adoptada** |
+| Spline PCHIP (preserva extremos), sin puntos con piso | **91.7%** | **Adoptada** |
 | Spline de suavizado (df 4, 5, 6) | 73%, 82%, 84% | Descartada: sesga el IC |
 | Reevaluar 8 veces más los puntos de la zona del mínimo | 87.2% | Descartada: no mejora (el sesgo del mínimo de un perfil ruidoso no es la causa de la subcobertura) |
 
 **Advertencia para leer la Fase 5b.** En uno de los dos conjuntos de prueba el IC con más puntos fue más angosto ([1.17, 1.56] frente a [1.51, 3.92]) y no cubrió el z verdadero (1.75). Es un solo ajuste con preset `exploratory` (ruido Monte Carlo del orden de 0.4, contra el umbral de 1.92) y no prueba nada por sí solo, pero indica que la cobertura se juzga con la Fase 5b completa (144 + 72 + 72 ajustes) y no con ejemplos. Si la cobertura con `standard` queda por debajo de 90%, se declara en el manuscrito como limitación y se recomienda `final` para informar el IC.
 
 **Pendiente**: corrida larga de la Fase 5b (`validation/R/15_confirmacion_fase5b.R`), recalibración de umbrales (H18) con G2, y congelar `v1.2.0-rc1`.
+
+### Corrección del 2026-10-16 (noche): error de la spline monótona
+
+La prueba corta de la Fase 5b mostró un IC que no contenía a z_hat (0.809–0.840 con z_hat = 0.85). La causa fue mi elección de `splinefun(method = "monoH.FC")`: solo garantiza no pasarse de los puntos si los datos son monótonos, y un perfil tiene un mínimo, así que la curva podía hundirse por debajo del mínimo observado (119.0 con puntos en 123.8). Se reemplazó por PCHIP (`.pchip()` en `R/profile_ci.R`), que no sale del rango de dos puntos vecinos, con un test que reproduce ese caso. Las cifras de las secciones 5 y 6 se recalcularon con PCHIP: la cobertura global corregida pasó de 90.3% a **91.9%**. La versión `v1.2.0-rc1` quedó reemplazada por **`v1.2.0-rc2`**.

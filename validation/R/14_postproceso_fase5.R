@@ -23,11 +23,7 @@ prop_ic <- function(x) {
   c(p = p, inf = (p + z^2 / (2 * n) - z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))) / (1 + z^2 / n),
     sup = (p + z^2 / (2 * n) + z * sqrt(p * (1 - p) / n + z^2 / (4 * n^2))) / (1 + z^2 / n), n = n)
 }
-ci_spline <- function(z, nll) {
-  f <- stats::splinefun(z, nll, method = "monoH.FC")
-  zz <- seq(min(z), max(z), by = 0.01)
-  funresMech:::.profile_ci(zz, f(zz))
-}
+ci_spline <- function(z, nll) funresMech:::.profile_ci(z, nll, interpolate = "spline")
 cubre <- function(ci, zt) (is.na(ci$z_low) || ci$z_low <= zt) && (is.na(ci$z_high) || zt <= ci$z_high)
 
 A <- lee("A_simulacion"); E <- lee("E_chequeos")

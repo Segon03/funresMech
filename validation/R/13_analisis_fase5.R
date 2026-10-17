@@ -86,11 +86,7 @@ escribe(as.data.frame(globalA), "A_global")
 # Causas de la subcobertura: IC recalculado sobre los mismos perfiles
 #   (1) sin los puntos con piso de probabilidad; (2) además con interpolación
 #   por spline monótona en vez de lineal.
-ci_spline <- function(z, nll) {
-  f <- stats::splinefun(z, nll, method = "monoH.FC")
-  zz <- seq(min(z), max(z), by = 0.01)
-  funresMech:::.profile_ci(zz, f(zz))
-}
+ci_spline <- function(z, nll) funresMech:::.profile_ci(z, nll, interpolate = "spline")
 cubre <- function(ci, zt) (is.na(ci$z_low) || ci$z_low <= zt) && (is.na(ci$z_high) || zt <= ci$z_high)
 alt <- do.call(rbind, lapply(split(PA, clave(PA)), function(q) {
   q <- q[order(q$z), ]; zt <- q$z_true[1]; q2 <- q[q$n_floor == 0, ]

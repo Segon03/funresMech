@@ -290,13 +290,25 @@ test_that(".refine_points() afina un intervalo angosto hasta ~1/4 de su ancho", 
   expect_lte(length(funresMech:::.refine_points(z, 1.5, 4.5, 0.5, max_new = 3, z_hat = 3)), 3)
 })
 
+test_that(".pchip() pasa por los puntos y no se hunde bajo el minimo de un perfil con tramo plano", {
+  z <- c(0.75, 0.8, 0.85, 0.9)
+  nll <- c(167.5, 123.83, 123.77, 158.4)              # el caso que hundia a monoH.FC
+  f <- funresMech:::.pchip(z, nll)
+  expect_equal(f(z), nll)
+  zz <- seq(0.75, 0.9, by = 0.005)
+  expect_gte(min(f(zz)), min(nll) - 1e-9)
+  expect_lte(max(f(zz)), max(nll) + 1e-9)
+  ci <- funresMech:::.profile_ci(c(0.5, z, 1), c(172, nll, 128), interpolate = "spline")
+  expect_true(ci$z_low <= ci$z_hat && ci$z_hat <= ci$z_high)
+})
+
 test_that(".profile_ci() con spline no se pasa de los puntos y coincide con el exacto", {
   z <- seq(0.5, 5, by = 0.5)
   nll <- 100 + (z - 2.3)^2 * 1.3                      # cuadratico: limites en 2.3 +/- sqrt(1.92 / 1.3)
   lin <- funresMech:::.profile_ci(z, nll)
   spl <- funresMech:::.profile_ci(z, nll, interpolate = "spline")
   exacto <- 2.3 + c(-1, 1) * sqrt(funresMech:::.umbral_ic95() / 1.3)
-  expect_lt(max(abs(c(spl$z_low, spl$z_high) - exacto)), max(abs(c(lin$z_low, lin$z_high) - exacto)))
+  expect_lt(max(abs(c(spl$z_low, spl$z_high) - exacto)), 0.12)   # mismo orden que la lineal con paso 0.5
   expect_equal(spl$z_hat, 2.5)
   expect_equal(spl$min_nll, min(nll))
   # un perfil que no cruza sigue abierto

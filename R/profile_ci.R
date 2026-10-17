@@ -16,7 +16,9 @@
 #' @param z_grid evaluated values of z (sorted).
 #' @param nll_vals NLL minimised at each value of z_grid.
 #' @param interpolate `"linear"` (between neighbouring points) or `"spline"`
-#'   (monotone Hermite spline, which does not overshoot between points; the
+#'   (shape-preserving cubic Hermite interpolation, PCHIP: it passes through
+#'   the points and never goes beyond the values of two neighbouring points,
+#'   so it creates no minimum or maximum that the points do not have; the
 #'   limits are then searched on a grid of step 0.01).
 #' @return list(z_hat, z_low, z_high, low_censored, high_censored,
 #'   threshold, min_nll). A side is "censored" when the profile never
@@ -27,7 +29,7 @@
   stopifnot(length(z_grid) == length(nll_vals), !is.unsorted(z_grid))
   interpolate <- match.arg(interpolate)
   if (interpolate == "spline" && length(z_grid) >= 3) {
-    f <- stats::splinefun(z_grid, nll_vals, method = "monoH.FC")
+    f <- .pchip(z_grid, nll_vals)
     zz <- sort(unique(c(z_grid, seq(min(z_grid), max(z_grid), by = 0.01))))
     ci <- .profile_ci(zz, f(zz), "linear")
     ci$z_hat <- z_grid[which.min(nll_vals)]
@@ -77,4 +79,34 @@
   z_low <- z_grid[idx_low];   n_low  <- nll_vals[idx_low]
   z_high <- z_grid[idx_high]; n_high <- nll_vals[idx_high]
   n_low + (n_high - n_low) * (z0 - z_low) / (z_high - z_low)
+}
+
+#' Shape-preserving piecewise cubic Hermite interpolation (PCHIP)
+#'
+#' Fritsch and Butland (1984): the slope at a point is the harmonic mean of the
+#' two neighbouring secants if they have the same sign and 0 at a local
+#' extremum, so the interpolant never leaves the range of two neighbouring
+#' values. (`stats::splinefun(method = "monoH.FC")` is not used because it
+#' only guarantees this for monotone data and can dip below the minimum of a
+#' profile.)
+#' @param x,y points, `x` increasing.
+#' @return A function of the abscissae.
+#' @noRd
+.pchip <- function(x, y) {
+  n <- length(x)
+  h <- diff(x); d <- diff(y) / h
+  m <- numeric(n)
+  m[1] <- d[1]; m[n] <- d[n - 1]
+  if (n > 2) for (k in 2:(n - 1)) {
+    if (d[k - 1] * d[k] > 0) {
+      w1 <- 2 * h[k] + h[k - 1]; w2 <- h[k] + 2 * h[k - 1]
+      m[k] <- (w1 + w2) / (w1 / d[k - 1] + w2 / d[k])
+    }
+  }
+  function(xx) {
+    i <- pmin(pmax(findInterval(xx, x), 1L), n - 1L)
+    tt <- (xx - x[i]) / h[i]
+    (2 * tt^3 - 3 * tt^2 + 1) * y[i] + (tt^3 - 2 * tt^2 + tt) * h[i] * m[i] +
+      (-2 * tt^3 + 3 * tt^2) * y[i + 1] + (tt^3 - tt^2) * h[i] * m[i + 1]
+  }
 }
