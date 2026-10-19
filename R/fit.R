@@ -10,7 +10,7 @@ NULL
 
 #' Settings of the simulated-likelihood fit
 #'
-#' Collects the settings of the optimiser and of the Monte Carlo
+#' Collects the settings of the optimizer and of the Monte Carlo
 #' approximation of the likelihood. Three presets are offered. **The
 #' exploratory preset is not meant for results to be reported**: it is a
 #' quick first look. Results must be checked with the reliability
@@ -24,7 +24,7 @@ NULL
 #'
 #' The final preset is the configuration of Okuyama (2026).
 #'
-#' **Default optimiser.** Differential evolution with common random numbers
+#' **Default optimizer.** Differential evolution with common random numbers
 #' and a Nelder-Mead polish was chosen in a comparison of strategies with
 #' equal budgets on simulated data with known parameters (validation/,
 #' phase 4): it reached the best optimum found within 0.5 NLL units in 80% of
@@ -46,9 +46,9 @@ NULL
 #'   because a noisy objective can stall temporarily.
 #' @param n_reeval Number of fresh evaluations of the likelihood at each
 #'   optimum. Their mean (an unbiased estimate, unlike the minimum found by
-#'   the optimiser) is used for the profile, the estimate of z and its
+#'   the optimizer) is used for the profile, the estimate of z and its
 #'   interval; their standard error measures Monte Carlo noise.
-#' @param method Optimisation method: `"DEoptim"` (differential evolution,
+#' @param method Optimization method: `"DEoptim"` (differential evolution,
 #'   default), `"CMAES"` (covariance matrix adaptation evolution strategy,
 #'   package 'cmaes') or `"CRS2"` (controlled random search with local
 #'   mutation, package 'nloptr'). All use a budget of about `itermax * NP`
@@ -136,15 +136,15 @@ print.funres_control <- function(x, ...) {
   invisible(TRUE)
 }
 
-# .optimise
+# .optimize
 #
-# Minimises fn over the box [ptab$lower, ptab$upper] with the method of the
+# Minimizes fn over the box [ptab$lower, ptab$upper] with the method of the
 # control object and the same budget of evaluations (about itermax * NP).
 # Returns theta, value (best value found, biased low for a noisy objective),
 # trace (best value per generation/iteration), pop (final population, when
 # the method has one) and nfeval. An optional Nelder-Mead polish (ctrl$polish
 # evaluations) refines the best point.
-.optimise <- function(fn, ptab, ctrl, initialpop = NULL) {
+.optimize <- function(fn, ptab, ctrl, initialpop = NULL) {
   lo <- ptab$lower; up <- ptab$upper; d <- length(lo)
   rng <- up - lo
   to_theta <- function(u) lo + u * rng                 # unit cube -> theta
@@ -202,10 +202,10 @@ print.funres_control <- function(x, ...) {
 
 # .fit_point
 #
-# One optimisation: z fixed (profile) or z in the parameter vector (joint,
+# One optimization: z fixed (profile) or z in the parameter vector (joint,
 # z_free = TRUE). Differential evolution on the dimensionless theta scale
 # (R/reparam.R), then n_reeval fresh evaluations of the NLL at the optimum.
-# The optimiser's best value (nll_opt) is the minimum of many noisy
+# The optimizer's best value (nll_opt) is the minimum of many noisy
 # evaluations and is biased downwards; the mean of the re-evaluations
 # (nll_reeval) is not, and is the value used downstream.
 .fit_point <- function(z, data_spp, T_exp, model, ctrl, bounds, H_ref,
@@ -224,7 +224,7 @@ print.funres_control <- function(x, ...) {
     .nll_sim(.theta_to_nat(theta, ptab, model, z, H_ref, T_exp), model,
              data_spp, T_exp, ctrl$n_sim, ctrl$cut)
   }
-  res <- .optimise(fn, ptab, ctrl, initialpop)
+  res <- .optimize(fn, ptab, ctrl, initialpop)
 
   theta <- res$theta
   names(theta) <- ptab$name
@@ -344,7 +344,7 @@ print.funres_control <- function(x, ...) {
                               margin = 0.5, max_points = 40) {
   prof <- joint
   z0 <- joint$z
-  thr <- .umbral_ic95() + margin
+  thr <- .ci95_threshold() + margin
   sides <- list(low = list(open = TRUE, last = z0, step = step, n = 0),
                 high = list(open = TRUE, last = z0, step = step, n = 0))
   first <- if (include_one && abs(z0 - 1) > 1e-8 && 1 > zb[1] && 1 < zb[2]) 1 else numeric(0)
@@ -461,7 +461,7 @@ print.funres_control <- function(x, ...) {
 #' the likelihood of the observed counts approximated by simulation of the
 #' foraging process (Okuyama 2012, 2026). The density-scaling exponent `z` is
 #' estimated by likelihood profiling: it is fixed at each value of a grid,
-#' the other parameters are optimised, and the estimate is the minimum of the
+#' the other parameters are optimized, and the estimate is the minimum of the
 #' profile. The 95% interval contains the values of `z` whose negative
 #' log-likelihood (NLL) is no more than `qchisq(0.95, 1) / 2 = 1.92` above
 #' the minimum.
@@ -474,10 +474,10 @@ print.funres_control <- function(x, ...) {
 #' \eqn{[10^{-6}, 1]}, \eqn{k} in \eqn{[10^{-5}, 100]} and \eqn{s/h} in
 #' \eqn{[0, 10]}. They can be changed with `funres_control(bounds = ...)`.
 #'
-#' **Reliability.** A simulated likelihood is noisy, and an optimiser can stop
+#' **Reliability.** A simulated likelihood is noisy, and an optimizer can stop
 #' at a suboptimal point; a returned estimate is not by itself evidence of a
 #' reliable fit. Check the `notes` of the result, which flag parameters on a
-#' search bound, large Monte Carlo noise, an optimiser still improving at the
+#' search bound, large Monte Carlo noise, an optimizer still improving at the
 #' end of the run and open intervals, and act on them.
 #'
 #' @param data Data frame with one row per trial.
@@ -503,8 +503,8 @@ print.funres_control <- function(x, ...) {
 #'   profile point has a lower NLL. **Experimental:** in simulations with
 #'   known parameters (validation/, phase 4) the joint method gave intervals
 #'   that covered the true z in 67% of the datasets, against 96% for the
-#'   profile, because with five free parameters the neighbouring profile
-#'   points are less well optimised. Confirm its results with the profile.
+#'   profile, because with five free parameters the neighboring profile
+#'   points are less well optimized. Confirm its results with the profile.
 #' @param z_step Initial step of the adaptive profile of the joint method.
 #' @param dens,response Names of the columns with host density and number of
 #'   hosts parasitized (prey consumed).
@@ -682,14 +682,14 @@ fit_funres <- function(data, T, model = funres_model(),
       "them: ", paste(fit$widened, collapse = ", "), "."))
   if (prof$at_bound[i_best])
     notes <- c(notes, paste0(
-      "At z_hat the optimiser ended on a search bound (",
+      "At z_hat the optimizer ended on a search bound (",
       prof$bound_names[i_best], "): the estimate of that parameter is only a ",
       "limit. Widen the bound (funres_control(bounds = ...)) and refit, or ",
       "check whether the data can identify it."))
   gap <- prof$nll[i_best] - prof$nll_opt[i_best]
   if (is.finite(gap) && gap > 2)
     notes <- c(notes, paste0(
-      "The re-evaluated NLL at the optimum exceeds the optimiser's by ",
+      "The re-evaluated NLL at the optimum exceeds the optimizer's by ",
       round(gap, 2), " units: Monte Carlo noise is large; increase n_sim."))
   if (is.finite(prof$nll_se[i_best]) && prof$nll_se[i_best] > 0.25)
     notes <- c(notes, paste0(
@@ -698,7 +698,7 @@ fit_funres <- function(data, T, model = funres_model(),
       "of the interval; increase n_sim."))
   if (is.finite(prof$late_gain[i_best]) && prof$late_gain[i_best] > 1)
     notes <- c(notes, paste0(
-      "The optimiser was still improving in the last quarter of the run (by ",
+      "The optimizer was still improving in the last quarter of the run (by ",
       round(prof$late_gain[i_best], 2), " NLL units): increase itermax."))
   if (fit$control$preset == "exploratory")
     notes <- c(notes, "Exploratory settings: do not report these results without a fit with the standard or final settings.")
@@ -729,7 +729,7 @@ print.funres_fit <- function(x, digits = 4, ...) {
   if (!is.na(x$aic$delta_AIC))
     cat(sprintf("AIC(z = 1) - AIC(z free) = %.2f\n", x$aic$delta_AIC))
   if (!is.na(x$aic$delta_AIC_BB))
-    cat(sprintf("AIC(Beta-Binomial, same mean) - AIC(mechanistic) = %.2f (positive favours the mechanistic model)\n",
+    cat(sprintf("AIC(Beta-Binomial, same mean) - AIC(mechanistic) = %.2f (positive favors the mechanistic model)\n",
                 x$aic$delta_AIC_BB))
   rel <- reliability(x)
   cat("\nReliability: ", toupper(attr(rel, "overall")),

@@ -22,7 +22,7 @@ The application covers the whole analysis: loading data with one row per
 trial (and an optional species or group column) and screening atypical
 trials; specifying the foraging model (parasitoid or predator process,
 distributions of search and handling times, including samplers written in
-R, fixed parameters, profile, joint or fixed estimation of \code{z}, optimiser,
+R, fixed parameters, profile, joint or fixed estimation of \code{z}, optimizer,
 Monte Carlo effort and search bounds); fitting with an estimate of the run
 time; checking and verifying the reliability of each fit; results
 (estimates, interval of \code{z}, AIC against \code{z = 1} and against a

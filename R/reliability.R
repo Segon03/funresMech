@@ -6,7 +6,7 @@
 # and will be calibrated with the simulation study (validation/, phase 5).
 .rel_thresholds <- function() {
   list(se_warn = 0.25,          # Monte Carlo SE of the NLL at the optimum
-       gap_warn = 2,            # re-evaluated minus optimiser NLL
+       gap_warn = 2,            # re-evaluated minus optimizer NLL
        late_warn = 1,           # improvement in the last quarter of the run
        rerun_ok = 0.5,          # |NLL difference| between independent runs
        rerun_fail = 1.92,       #   (1.92 = half-width of the 95% threshold)
@@ -21,12 +21,12 @@
 
 #' Reliability checks of a fit
 #'
-#' Summarises, as a table with a status for each check (`"ok"`, `"warning"`
+#' Summarizes, as a table with a status for each check (`"ok"`, `"warning"`
 #' or `"fail"`) and the recommended action, the diagnostics available in a
-#' fitted model. [verify_fit()] adds checks that require extra optimisations
+#' fitted model. [verify_fit()] adds checks that require extra optimizations
 #' (independent runs, more effort, wider bounds).
 #'
-#' A simulated likelihood is noisy and the optimiser can stop at a suboptimal
+#' A simulated likelihood is noisy and the optimizer can stop at a suboptimal
 #' point. A fit should be reported only when no check fails, and warnings
 #' should be understood and, when possible, removed by acting on them.
 #'
@@ -73,23 +73,23 @@ reliability <- function(fit) {
 
   gap <- prof$nll[i] - prof$nll_opt[i]
   rows$gap <- .rel_row(
-    "Optimiser value vs re-evaluated NLL",
+    "Optimizer value vs re-evaluated NLL",
     if (is.finite(gap) && gap > th$gap_warn) "warning" else "ok", gap,
-    sprintf("re-evaluated minus optimiser NLL = %.2f", gap),
-    if (is.finite(gap) && gap > th$gap_warn) "Increase n_sim: the optimiser is exploiting Monte Carlo noise." else "")
+    sprintf("re-evaluated minus optimizer NLL = %.2f", gap),
+    if (is.finite(gap) && gap > th$gap_warn) "Increase n_sim: the optimizer is exploiting Monte Carlo noise." else "")
 
   lg <- prof$late_gain[i]
   rows$late <- .rel_row(
-    "Optimiser settled before the end of the run",
+    "Optimizer settled before the end of the run",
     if (is.finite(lg) && lg > th$late_warn) "warning" else "ok", lg,
     sprintf("improvement in the last quarter of the run = %.2f NLL units", lg),
     if (is.finite(lg) && lg > th$late_warn) "Increase itermax (and NP)." else "")
 
   if (nrow(prof) >= 3) {
-    # Interior points lower than both neighbours (beyond Monte Carlo noise),
+    # Interior points lower than both neighbors (beyond Monte Carlo noise),
     # other than the global minimum: a smooth profile has a single minimum,
-    # so extra local minima mean that the optimiser failed at the
-    # neighbouring values of z.
+    # so extra local minima mean that the optimizer failed at the
+    # neighboring values of z.
     n <- nrow(prof)
     tol <- pmax(1, 2 * ifelse(is.finite(prof$nll_se), prof$nll_se, 0))
     loc <- vapply(2:(n - 1), function(j)
@@ -101,7 +101,7 @@ reliability <- function(fit) {
       if (length(idx)) "fail" else "ok", length(idx),
       if (length(idx)) paste0("extra local minima at z = ", paste(signif(prof$z[idx], 3), collapse = ", "))
       else "no extra local minima",
-      if (length(idx)) "The optimiser failed at some values of z (the profile is jagged): increase itermax, NP and n_sim, and refit; the interval of z is not reliable." else "")
+      if (length(idx)) "The optimizer failed at some values of z (the profile is jagged): increase itermax, NP and n_sim, and refit; the interval of z is not reliable." else "")
   }
   if (!is.null(fit$ci)) {
     open <- c(if (fit$ci$low_censored) "lower", if (fit$ci$high_censored) "upper")
@@ -148,7 +148,7 @@ print.funres_reliability <- function(x, ...) {
   invisible(x)
 }
 
-#' Verify a fit with additional optimisations
+#' Verify a fit with additional optimizations
 #'
 #' Refits the model at the estimate of `z` (i) in `n_runs` independent runs
 #' with the same settings, (ii) with more effort (`effort` times more
@@ -157,7 +157,7 @@ print.funres_reliability <- function(x, ...) {
 #' by independent runs, is not improved by more effort and does not move when
 #' the bounds are widened. The results are added to [reliability()].
 #'
-#' Cost: about `n_runs + 2` optimisations at one value of z, the second of
+#' Cost: about `n_runs + 2` optimizations at one value of z, the second of
 #' them `effort^2` times more expensive (more simulations per evaluation and
 #' more generations).
 #'
@@ -215,7 +215,7 @@ verify_fit <- function(fit, n_runs = 2, effort = 2, bounds_factor = 10) {
     .rel_row("Independent runs agree (a, h)",
              if (rel_par > th$par_warn) "warning" else "ok", rel_par,
              sprintf("largest relative difference of a or h between runs = %.0f%%", 100 * rel_par),
-             if (rel_par > th$par_warn) "Parameters weakly identified or optimiser unstable: more effort; interpret a and h with caution." else ""),
+             if (rel_par > th$par_warn) "Parameters weakly identified or optimizer unstable: more effort; interpret a and h with caution." else ""),
     .rel_row("More effort does not improve the optimum",
              if (gain_hi > th$better_fail) "fail" else "ok", gain_hi,
              sprintf("NLL improvement with %gx effort = %.2f", effort, gain_hi),

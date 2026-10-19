@@ -10,7 +10,7 @@ NULL
 #
 # Pure-R REFERENCE implementation of one foraging trial (Okuyama 2012,
 # 2026). The fitting code does not use it: it runs on the C++ engine
-# `motor_okuyama_cpp()` (src/motor.cpp). It is kept so that the tests can
+# `sim_engine_cpp()` (src/engine.cpp). It is kept so that the tests can
 # check, with the same seed, that the engine reproduces it exactly.
 #
 # s is the standard deviation of the handling time on the NATURAL scale

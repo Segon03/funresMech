@@ -12,7 +12,7 @@
 # log/logit scale, by differential evolution followed by a local polish.
 # The objective is deterministic.
 
-# Expected prey consumed by one predator in time T (vectorised over x)
+# Expected prey consumed by one predator in time T (vectorized over x)
 .mu_predator <- function(x, a, h, z, T = 1) {
   vapply(x, function(H0) {
     if (H0 <= 0) return(0)
@@ -31,7 +31,7 @@
 }
 
 .mu_process <- function(process, x, a, h, z, T = 1) {
-  if (process == "predator") .mu_predator(x, a, h, z, T) else .mu_okuyama(x, a, h, z, T)
+  if (process == "predator") .mu_predator(x, a, h, z, T) else .mu_parasitoid(x, a, h, z, T)
 }
 
 # NLL of the Beta-Binomial model; theta = (log a*, log h*, [log z], logit rho)

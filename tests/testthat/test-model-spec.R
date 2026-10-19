@@ -1,6 +1,6 @@
 # Model specification, simulation and fitting interface (API of 1.2.0)
 
-datos <- data.frame(dens = rep(c(2, 5, 10, 20), each = 4),
+test_data <- data.frame(dens = rep(c(2, 5, 10, 20), each = 4),
                     par  = c(0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 10, 12))
 
 test_that("funres_model() builds the model and validates the input", {
@@ -66,7 +66,7 @@ test_that("fit_funres() fits every family, fixed parameters and both processes",
                    rgamma(n, shape = shape, rate = shape), 0.01, 100)))
   for (m in models) {
     set.seed(3)
-    f <- suppressWarnings(fit_funres(datos, T = 24, model = m, z_grid = c(1, 2),
+    f <- suppressWarnings(fit_funres(test_data, T = 24, model = m, z_grid = c(1, 2),
                                      control = ctrl, extend_z = FALSE,
                                      refine = FALSE, time_unit = "h"))
     expect_s3_class(f, "funres_fit")
@@ -83,12 +83,12 @@ test_that("fit_funres() fits every family, fixed parameters and both processes",
 test_that("fit_funres() is reproducible with set.seed() and validates input", {
   skip_on_cran()
   ctrl <- funres_control("exploratory", n_sim = 150, itermax = 5, NP = 12, n_reeval = 2)
-  f <- function() suppressWarnings(fit_funres(datos, 24, z_grid = c(1, 2),
+  f <- function() suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2),
                                               control = ctrl, extend_z = FALSE))
   set.seed(4); f1 <- f()
   set.seed(4); f2 <- f()
   expect_identical(f1$profile, f2$profile)
-  expect_error(fit_funres(datos, T = -1), "T must be")
+  expect_error(fit_funres(test_data, T = -1), "T must be")
   expect_error(fit_funres(data.frame(x = 1, y = 2), T = 1), "not found")
   expect_error(fit_funres(data.frame(dens = 5, par = 2.5), T = 1), "whole numbers")
   expect_error(funres_control(n_sim = 10), "n_sim")
@@ -97,8 +97,8 @@ test_that("fit_funres() is reproducible with set.seed() and validates input", {
 test_that("screening of atypical trials does not depend on the time unit", {
   skip_on_cran()
   d2 <- read.csv(test_path("fixtures", "D2.csv"))
-  a <- funresMech:::screen_outliers(d2, 24)
-  b <- funresMech:::screen_outliers(d2, 24 * 60)
+  a <- screen_outliers(d2, 24)
+  b <- screen_outliers(d2, 24 * 60)
   expect_equal(a$p_loo, b$p_loo)
   expect_equal(sum(a$flagged), 1)
 })
@@ -107,7 +107,7 @@ test_that("a search bound hit at the optimum is widened automatically", {
   # Deterministic: the point fit is replaced by a stub whose optimum lies on
   # the upper bound of the encounter rate while that bound is below 5
   # encounters per trial (dimensionless scale), and inside it otherwise. The
-  # real optimiser is not used, so the test does not depend on the random
+  # real optimizer is not used, so the test does not depend on the random
   # path of DEoptim (which differs between platforms).
   fake_point <- function(z, data_spp, T_exp, model, ctrl, bounds, H_ref,
                          z_free = FALSE, initialpop = NULL) {
@@ -126,7 +126,7 @@ test_that("a search bound hit at the optimum is widened automatically", {
   old <- future::plan(future::sequential)
   on.exit(future::plan(old), add = TRUE)
 
-  base <- list(datos, 24, z_grid = c(1, 2), extend_z = FALSE, refine = FALSE)
+  base <- list(test_data, 24, z_grid = c(1, 2), extend_z = FALSE, refine = FALSE)
   # upper bound of lambda: 0.05 per h -> 1.2 encounters per trial (hit);
   # after one widening x10 -> 12 (not hit)
   ctrl <- funres_control("exploratory", bounds = list(lambda = c(1e-4, 0.05)),
@@ -172,7 +172,7 @@ test_that("reliability() and verify_fit() report the checks with a status", {
   skip_on_cran()
   ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12, n_reeval = 3)
   set.seed(7)
-  f <- suppressWarnings(fit_funres(datos, 24, z_grid = c(1, 2), control = ctrl,
+  f <- suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2), control = ctrl,
                                    extend_z = FALSE, refine = FALSE))
   r <- reliability(f)
   expect_s3_class(r, "funres_reliability")
@@ -219,7 +219,7 @@ test_that("joint estimation of z with an adaptive profile for the interval", {
   ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 15,
                          n_reeval = 2, bb = FALSE)
   set.seed(9)
-  f <- suppressWarnings(fit_funres(datos, 24, control = ctrl, z_method = "joint",
+  f <- suppressWarnings(fit_funres(test_data, 24, control = ctrl, z_method = "joint",
                                    z_step = 0.5, refine = FALSE))
   expect_equal(f$z_method, "joint")
   expect_equal(nrow(f$joint), 1)
@@ -239,9 +239,9 @@ test_that("defaults chosen in the phase 4 comparison: DEoptim + common random nu
   expect_equal(ctl$polish, 200L)
 })
 
-test_that("alternative optimisers, common random numbers and polish run", {
+test_that("alternative optimizers, common random numbers and polish run", {
   skip_on_cran()
-  base <- list(datos, 24, z_grid = 1.5, extend_z = FALSE, refine = FALSE)
+  base <- list(test_data, 24, z_grid = 1.5, extend_z = FALSE, refine = FALSE)
   for (meth in c("CMAES", "CRS2")) {
     skip_if_not_installed(if (meth == "CMAES") "cmaes" else "nloptr")
     ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12,
@@ -265,7 +265,7 @@ test_that("a jagged profile (extra local minima) fails the regularity check", {
   skip_on_cran()
   ctrl <- funres_control("exploratory", n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
   set.seed(1)
-  f <- suppressWarnings(fit_funres(datos, 24, z_grid = c(1, 2), control = ctrl,
+  f <- suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2), control = ctrl,
                                    extend_z = FALSE, refine = FALSE))
   f$profile <- f$profile[c(1, 2, 1, 2, 1), ]
   f$profile$z <- 1:5
@@ -293,7 +293,7 @@ test_that("an open lower limit of z extends the grid downwards", {
   old <- future::plan(future::sequential)
   on.exit(future::plan(old), add = TRUE)
   ctrl <- funres_control("exploratory", widen = 0, bb = FALSE)
-  base <- list(datos, 24, z_grid = c(0.5, 1, 1.5), refine = FALSE, control = ctrl)
+  base <- list(test_data, 24, z_grid = c(0.5, 1, 1.5), refine = FALSE, control = ctrl)
 
   # minimum at the lowest grid value; crosses the threshold between 0.1 and 0.25
   testthat::local_mocked_bindings(.fit_point = make_point(20, 0.5))
@@ -308,7 +308,7 @@ test_that("an open lower limit of z extends the grid downwards", {
   expect_true(f0$ci$low_censored)
   expect_true(any(grepl("not reached within the grid \\(z <= 0.5\\)", f0$notes)))
 
-  # flat towards z = 0: still open after the extension, not identified
+  # flat toward z = 0: still open after the extension, not identified
   testthat::local_mocked_bindings(.fit_point = make_point(0.5, 0))
   f1 <- do.call(fit_funres, base)
   expect_true(f1$ci$low_censored)

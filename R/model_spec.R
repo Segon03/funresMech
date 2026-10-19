@@ -3,7 +3,7 @@
 # foraging process and fixed parameters
 ############################################################
 
-# Family codes shared with src/motor.cpp
+# Family codes shared with src/engine.cpp
 .search_codes   <- c(gamma = 0L, lognormal = 1L, weibull = 2L)
 .handling_codes <- c(lognormal = 0L, gamma = 1L, weibull = 2L, constant = 3L)
 .user_r_code    <- 9L

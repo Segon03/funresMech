@@ -17,7 +17,7 @@ test_that("anchor: NLL of D3 equals the value of Okuyama's code (132.04994217)",
   set.seed(88)
   nll <- funresMech:::negloglik_fixed_z(c(0.012, 0.626, 0.902, 0.542),
                                         z_fixed = 2.5, data_spp = d3, T = 24,
-                                        n_sim = 3000, corte_saturacion = FALSE)
+                                        n_sim = 3000, stop_saturated = FALSE)
   expect_equal(sprintf("%.8f", nll), "132.04994217")
 })
 
@@ -25,7 +25,7 @@ test_that("engine reproduces the simulated counts of 1.1.0 exactly", {
   for (cs in golden$engine) {
     for (cut in c(TRUE, FALSE)) {
       set.seed(cs$seed)
-      out <- funresMech:::motor_okuyama_cpp(cs$H, cs$a, cs$h, cs$z, cs$k,
+      out <- funresMech:::sim_engine_cpp(cs$H, cs$a, cs$h, cs$z, cs$k,
                                             cs$s, cs$T, cs$n, cut)
       ref <- if (cut) cs$out_cut else cs$out_nocut
       expect_identical(as.integer(out), as.integer(ref))
@@ -39,7 +39,7 @@ test_that("simulated likelihood reproduces the NLL of 1.1.0 exactly", {
     set.seed(cs$seed)
     nll <- funresMech:::negloglik_fixed_z(cs$par, z_fixed = cs$z, data_spp = d,
                                           T = golden$T_exp, n_sim = cs$n_sim,
-                                          corte_saturacion = cs$cut)
+                                          stop_saturated = cs$cut)
     # Integer counts are compared exactly above; the NLL is a sum of logs and
     # may differ in the last bits between compilers/math libraries (Windows
     # vs Linux), hence the tiny tolerance.

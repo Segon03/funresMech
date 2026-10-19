@@ -2,7 +2,7 @@
 % Please edit documentation in R/reliability.R
 \name{verify_fit}
 \alias{verify_fit}
-\title{Verify a fit with additional optimisations}
+\title{Verify a fit with additional optimizations}
 \usage{
 verify_fit(fit, n_runs = 2, effort = 2, bounds_factor = 10)
 }
@@ -28,7 +28,7 @@ by independent runs, is not improved by more effort and does not move when
 the bounds are widened. The results are added to \code{\link[=reliability]{reliability()}}.
 }
 \details{
-Cost: about \code{n_runs + 2} optimisations at one value of z, the second of
+Cost: about \code{n_runs + 2} optimizations at one value of z, the second of
 them \code{effort^2} times more expensive (more simulations per evaluation and
 more generations).
 }

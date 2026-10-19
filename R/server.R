@@ -94,7 +94,7 @@ server <- function(input, output, session) {
 
   output$species_choice <- renderUI({
     sp <- unique(mapped()$species)
-    selectizeInput("species", "Species or groups to analyse", sp, selected = sp, multiple = TRUE)
+    selectizeInput("species", "Species or groups to analyze", sp, selected = sp, multiple = TRUE)
   })
 
   output$data_summary <- renderTable({
@@ -202,7 +202,7 @@ server <- function(input, output, session) {
           tags$tr(tags$th("Fixed"), tags$td(if (length(m$fix)) paste(names(m$fix), unlist(m$fix), sep = " = ", collapse = ", ") else "none")),
           tags$tr(tags$th("z"), tags$td(switch(input$z_mode, profile = sprintf("profile from %s to %s in steps of %s", input$z_min, input$z_max, input$z_step),
                                                  joint = "joint estimate, then profile around it", fixed = paste("fixed at", input$z_value)))),
-          tags$tr(tags$th("Optimisation"), tags$td(sprintf("%s; n_sim %d, %d generations, population %d, %d re-evaluations",
+          tags$tr(tags$th("Optimization"), tags$td(sprintf("%s; n_sim %d, %d generations, population %d, %d re-evaluations",
                                                          ctl$method, ctl$n_sim, ctl$itermax, ctl$NP, ctl$n_reeval))),
           if (!is.null(rv$runtime)) tags$tr(tags$th("Estimated run time"), tags$td(rv$runtime))
         )),
@@ -386,7 +386,7 @@ server <- function(input, output, session) {
     a <- .aic_table(f)
     a$AIC <- round(a$AIC, 2); a$`Delta AIC` <- round(a$`Delta AIC`, 2)
     tagList(.html_table(a),
-            p(class = "muted", "Delta AIC is relative to this fit: positive values favour this fit. The Beta-Binomial model has the same expected value as the mechanistic model (Okuyama 2026)."))
+            p(class = "muted", "Delta AIC is relative to this fit: positive values favor this fit. The Beta-Binomial model has the same expected value as the mechanistic model (Okuyama 2026)."))
   })
 
   output$profile_plot <- renderPlotly(.plotly(.plot_profile(fit_of("res_species"))))

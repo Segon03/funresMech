@@ -14,7 +14,7 @@ Description: Fits mechanistic functional response models to
   of search and handling times (built-in families or samplers written in R or
   C++), parasitoid (no host removal) or predator (prey removal) processes,
   and fixed or estimated parameters. Provides likelihood profiling of the
-  density-scaling exponent, diagnostics of optimisation and Monte Carlo
+  density-scaling exponent, diagnostics of optimization and Monte Carlo
   reliability, screening of atypical trials, stochastic simulation and an
   interactive 'shiny' application with 'plotly' graphics and 'rmarkdown'
   reports. The simulation engine is implemented in C++ via 'Rcpp'.

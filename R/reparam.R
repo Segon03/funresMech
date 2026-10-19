@@ -1,8 +1,8 @@
 ############################################################
-# Parameterisation used by the optimiser
+# Parameterization used by the optimizer
 ############################################################
 
-# Time is expressed in units of the trial duration T inside the optimiser,
+# Time is expressed in units of the trial duration T inside the optimizer,
 # so that the search bounds do not depend on the time unit chosen by the
 # user (minutes, hours, days):
 #
@@ -64,14 +64,14 @@
 #' @noRd
 .h_ref <- function(data_spp) exp(mean(log(unique(data_spp$dens))))
 
-#' Table of the parameters searched by the optimiser
+#' Table of the parameters searched by the optimizer
 #'
 #' @param model funres_model()
 #' @param bounds dimensionless bounds from .make_bounds()
 #' @param z_free TRUE when z is estimated jointly (not profiled)
 #' @return data.frame with name, lower, upper (theta scale) and natural_lower
 #'   (TRUE when the lower bound is a natural boundary of the parameter space,
-#'   so that ending there is not an optimisation problem).
+#'   so that ending there is not an optimization problem).
 #' @noRd
 .par_table <- function(model, bounds, z_free = FALSE) {
   rows <- list(

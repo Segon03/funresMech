@@ -39,10 +39,10 @@ because a noisy objective can stall temporarily.}
 
 \item{n_reeval}{Number of fresh evaluations of the likelihood at each
 optimum. Their mean (an unbiased estimate, unlike the minimum found by
-the optimiser) is used for the profile, the estimate of z and its
+the optimizer) is used for the profile, the estimate of z and its
 interval; their standard error measures Monte Carlo noise.}
 
-\item{method}{Optimisation method: \code{"DEoptim"} (differential evolution,
+\item{method}{Optimization method: \code{"DEoptim"} (differential evolution,
 default), \code{"CMAES"} (covariance matrix adaptation evolution strategy,
 package 'cmaes') or \code{"CRS2"} (controlled random search with local
 mutation, package 'nloptr'). All use a budget of about \code{itermax * NP}
@@ -82,7 +82,7 @@ where it persists is flagged and left out of the interval of z.}
 An object of class \code{funres_control}.
 }
 \description{
-Collects the settings of the optimiser and of the Monte Carlo
+Collects the settings of the optimizer and of the Monte Carlo
 approximation of the likelihood. Three presets are offered. \strong{The
 exploratory preset is not meant for results to be reported}: it is a
 quick first look. Results must be checked with the reliability
@@ -99,7 +99,7 @@ diagnostics returned by \code{\link[=fit_funres]{fit_funres()}} whatever the pre
 
 The final preset is the configuration of Okuyama (2026).
 
-\strong{Default optimiser.} Differential evolution with common random numbers
+\strong{Default optimizer.} Differential evolution with common random numbers
 and a Nelder-Mead polish was chosen in a comparison of strategies with
 equal budgets on simulated data with known parameters (validation/,
 phase 4): it reached the best optimum found within 0.5 NLL units in 80\% of

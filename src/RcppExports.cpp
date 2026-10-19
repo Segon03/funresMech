@@ -51,9 +51,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// motor_okuyama_cpp
-IntegerVector motor_okuyama_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, bool corte_saturacion);
-RcppExport SEXP _funresMech_motor_okuyama_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP corte_saturacionSEXP) {
+// sim_engine_cpp
+IntegerVector sim_engine_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, bool stop_saturated);
+RcppExport SEXP _funresMech_sim_engine_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP stop_saturatedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -65,14 +65,14 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type s(sSEXP);
     Rcpp::traits::input_parameter< double >::type T(TSEXP);
     Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
-    Rcpp::traits::input_parameter< bool >::type corte_saturacion(corte_saturacionSEXP);
-    rcpp_result_gen = Rcpp::wrap(motor_okuyama_cpp(H, a, h, z, k, s, T, nsim, corte_saturacion));
+    Rcpp::traits::input_parameter< bool >::type stop_saturated(stop_saturatedSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_engine_cpp(H, a, h, z, k, s, T, nsim, stop_saturated));
     return rcpp_result_gen;
 END_RCPP
 }
-// contar_vueltas_cpp
-double contar_vueltas_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, bool corte_saturacion, double max_vueltas);
-RcppExport SEXP _funresMech_contar_vueltas_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP corte_saturacionSEXP, SEXP max_vueltasSEXP) {
+// count_loops_cpp
+double count_loops_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, bool stop_saturated, double max_loops);
+RcppExport SEXP _funresMech_count_loops_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP stop_saturatedSEXP, SEXP max_loopsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -84,9 +84,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type s(sSEXP);
     Rcpp::traits::input_parameter< double >::type T(TSEXP);
     Rcpp::traits::input_parameter< int >::type nsim(nsimSEXP);
-    Rcpp::traits::input_parameter< bool >::type corte_saturacion(corte_saturacionSEXP);
-    Rcpp::traits::input_parameter< double >::type max_vueltas(max_vueltasSEXP);
-    rcpp_result_gen = Rcpp::wrap(contar_vueltas_cpp(H, a, h, z, k, s, T, nsim, corte_saturacion, max_vueltas));
+    Rcpp::traits::input_parameter< bool >::type stop_saturated(stop_saturatedSEXP);
+    Rcpp::traits::input_parameter< double >::type max_loops(max_loopsSEXP);
+    rcpp_result_gen = Rcpp::wrap(count_loops_cpp(H, a, h, z, k, s, T, nsim, stop_saturated, max_loops));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -104,8 +104,8 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_funresMech_draw_times_cpp", (DL_FUNC) &_funresMech_draw_times_cpp, 6},
     {"_funresMech_sim_trials_cpp", (DL_FUNC) &_funresMech_sim_trials_cpp, 15},
-    {"_funresMech_motor_okuyama_cpp", (DL_FUNC) &_funresMech_motor_okuyama_cpp, 9},
-    {"_funresMech_contar_vueltas_cpp", (DL_FUNC) &_funresMech_contar_vueltas_cpp, 10},
+    {"_funresMech_sim_engine_cpp", (DL_FUNC) &_funresMech_sim_engine_cpp, 9},
+    {"_funresMech_count_loops_cpp", (DL_FUNC) &_funresMech_count_loops_cpp, 10},
     {"_funresMech_example_cpp_sampler", (DL_FUNC) &_funresMech_example_cpp_sampler, 0},
     {NULL, NULL, 0}
 };

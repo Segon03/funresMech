@@ -9,12 +9,12 @@ sim_trials_cpp <- function(H, a, h, z, k, s, T, nsim, search_family = 0L, handli
     .Call(`_funresMech_sim_trials_cpp`, H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general)
 }
 
-motor_okuyama_cpp <- function(H, a, h, z, k, s, T, nsim, corte_saturacion = TRUE) {
-    .Call(`_funresMech_motor_okuyama_cpp`, H, a, h, z, k, s, T, nsim, corte_saturacion)
+sim_engine_cpp <- function(H, a, h, z, k, s, T, nsim, stop_saturated = TRUE) {
+    .Call(`_funresMech_sim_engine_cpp`, H, a, h, z, k, s, T, nsim, stop_saturated)
 }
 
-contar_vueltas_cpp <- function(H, a, h, z, k, s, T, nsim, corte_saturacion, max_vueltas = 1e9) {
-    .Call(`_funresMech_contar_vueltas_cpp`, H, a, h, z, k, s, T, nsim, corte_saturacion, max_vueltas)
+count_loops_cpp <- function(H, a, h, z, k, s, T, nsim, stop_saturated, max_loops = 1e9) {
+    .Call(`_funresMech_count_loops_cpp`, H, a, h, z, k, s, T, nsim, stop_saturated, max_loops)
 }
 
 example_cpp_sampler <- function() {

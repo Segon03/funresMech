@@ -190,7 +190,7 @@ NULL
   prof$lo <- prof$dnll - 2 * ifelse(is.finite(prof$nll_se), prof$nll_se, 0)
   prof$hi <- prof$dnll + 2 * ifelse(is.finite(prof$nll_se), prof$nll_se, 0)
   prof$point <- ifelse(prof$at_bound, "estimate on a search bound", "profile point")
-  thr <- .umbral_ic95()
+  thr <- .ci95_threshold()
   g <- ggplot(prof, aes(x = .data$z, y = .data$dnll)) +
     geom_hline(yintercept = thr, linetype = "dashed", colour = .app_col$slate, linewidth = 0.4) +
     geom_errorbar(aes(ymin = .data$lo, ymax = .data$hi), width = 0, colour = .app_col$accent_soft,

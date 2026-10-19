@@ -9,7 +9,10 @@
 # Run from this folder:  Rscript make_golden.R
 # ---------------------------------------------------------------------------
 stopifnot(as.character(utils::packageVersion("funresMech")) == "1.1.0")
-motor <- funresMech:::motor_okuyama_cpp
+# The internal name of the engine function changed after version 1.1.0;
+# look it up so that this script still runs with 1.1.0 installed.
+ns <- asNamespace("funresMech")
+engine_fn <- get(grep("^(sim_engine|motor_[a-z]+)_cpp$", ls(ns, all.names = TRUE), value = TRUE)[1], ns)
 nllfz <- funresMech:::negloglik_fixed_z
 
 d2 <- read.csv("D2.csv"); d3 <- read.csv("D3.csv")
@@ -26,7 +29,7 @@ engine <- lapply(seq_along(engine_cases), function(i) {
   cs <- engine_cases[[i]]
   out <- lapply(c(TRUE, FALSE), function(cut) {
     set.seed(1000 + i)
-    motor(cs$H, cs$a, cs$h, cs$z, cs$k, cs$s, cs$T, 500L, cut)
+    engine_fn(cs$H, cs$a, cs$h, cs$z, cs$k, cs$s, cs$T, 500L, cut)
   })
   c(cs, list(seed = 1000 + i, n = 500L, out_cut = out[[1]], out_nocut = out[[2]]))
 })
@@ -42,7 +45,7 @@ nll <- lapply(nll_cases, function(cs) {
   d <- if (cs$data == "D2") d2 else d3
   set.seed(cs$seed)
   cs$nll <- nllfz(cs$par, z_fixed = cs$z, data_spp = d, T = T_exp,
-                  n_sim = cs$n_sim, corte_saturacion = cs$cut)
+                  n_sim = cs$n_sim, stop_saturated = cs$cut)
   cs
 })
 

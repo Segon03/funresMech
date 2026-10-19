@@ -1,7 +1,7 @@
 ## funresMech 1.1.0 (update of 1.0.4)
 
 This is an update of the version on CRAN (1.0.4). It replaces the simulation
-and optimisation core of the package; the statistical model is unchanged
+and optimization core of the package; the statistical model is unchanged
 (Okuyama 2012, 2026). Details are in NEWS.md.
 
 * The stochastic simulator is now written in C++ with 'Rcpp' (new
@@ -9,7 +9,7 @@ and optimisation core of the package; the statistical model is unchanged
   compilation (`src/motor.cpp`).
 * Results can differ from 1.0.4 by design: `s` is now the standard deviation
   of the handling time on the natural scale, the 95% interval of `z` uses the
-  likelihood-ratio threshold of 1.92 (1.0.4 used 3.84) and the optimisation is
+  likelihood-ratio threshold of 1.92 (1.0.4 used 3.84) and the optimization is
   carried out on the log scale with wider bounds. These changes are
   documented in NEWS.md.
 * No `set.seed()` is called inside the package; all randomness is controlled

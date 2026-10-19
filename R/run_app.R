@@ -8,7 +8,7 @@
 #' trial (and an optional species or group column) and screening atypical
 #' trials; specifying the foraging model (parasitoid or predator process,
 #' distributions of search and handling times, including samplers written in
-#' R, fixed parameters, profile, joint or fixed estimation of `z`, optimiser,
+#' R, fixed parameters, profile, joint or fixed estimation of `z`, optimizer,
 #' Monte Carlo effort and search bounds); fitting with an estimate of the run
 #' time; checking and verifying the reliability of each fit; results
 #' (estimates, interval of `z`, AIC against `z = 1` and against a
@@ -41,7 +41,7 @@
 #' @export
 #' @import shiny
 run_app <- function(...) {
-  # Cargar los componentes UI y server
+  # Load the UI and server components
   app <- shiny::shinyApp(ui = ui(), server = server)
   shiny::runApp(app, ...)
 }

@@ -9,15 +9,15 @@
 #' omitted the "/ 2", which gives an interval of about 99.5\%.
 #' @importFrom stats qchisq
 #' @noRd
-.umbral_ic95 <- function() qchisq(0.95, 1) / 2
+.ci95_threshold <- function() qchisq(0.95, 1) / 2
 
 #' 95\% interval of z by linear interpolation of the profile
 #'
 #' @param z_grid evaluated values of z (sorted).
-#' @param nll_vals NLL minimised at each value of z_grid.
-#' @param interpolate `"linear"` (between neighbouring points) or `"spline"`
+#' @param nll_vals NLL minimized at each value of z_grid.
+#' @param interpolate `"linear"` (between neighboring points) or `"spline"`
 #'   (shape-preserving cubic Hermite interpolation, PCHIP: it passes through
-#'   the points and never goes beyond the values of two neighbouring points,
+#'   the points and never goes beyond the values of two neighboring points,
 #'   so it creates no minimum or maximum that the points do not have; the
 #'   limits are then searched on a grid of step 0.01).
 #' @return list(z_hat, z_low, z_high, low_censored, high_censored,
@@ -34,12 +34,12 @@
     ci <- .profile_ci(zz, f(zz), "linear")
     ci$z_hat <- z_grid[which.min(nll_vals)]
     ci$min_nll <- min(nll_vals)
-    ci$threshold <- ci$min_nll + .umbral_ic95()
+    ci$threshold <- ci$min_nll + .ci95_threshold()
     return(ci)
   }
   min_nll   <- min(nll_vals)
   idx_min   <- which.min(nll_vals)
-  threshold <- min_nll + .umbral_ic95()
+  threshold <- min_nll + .ci95_threshold()
 
   z_low <- NA_real_
   for (i in seq(idx_min, 1, by = -1)) {
@@ -68,7 +68,7 @@
 }
 
 #' NLL of the profile at z0 (exact if evaluated, otherwise linear
-#' interpolation between neighbouring points)
+#' interpolation between neighboring points)
 #' @noRd
 .nll_at_z <- function(z_grid, nll_vals, z0) {
   if (z0 < min(z_grid) || z0 > max(z_grid)) return(NA_real_)
@@ -84,8 +84,8 @@
 #' Shape-preserving piecewise cubic Hermite interpolation (PCHIP)
 #'
 #' Fritsch and Butland (1984): the slope at a point is the harmonic mean of the
-#' two neighbouring secants if they have the same sign and 0 at a local
-#' extremum, so the interpolant never leaves the range of two neighbouring
+#' two neighboring secants if they have the same sign and 0 at a local
+#' extremum, so the interpolant never leaves the range of two neighboring
 #' values. (`stats::splinefun(method = "monoH.FC")` is not used because it
 #' only guarantees this for monotone data and can dip below the minimum of a
 #' profile.)

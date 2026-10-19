@@ -14,13 +14,13 @@ Data frame with columns \code{check}, \code{status}, \code{value}, \code{detail}
 \code{action}; attribute \code{overall} holds the worst status.
 }
 \description{
-Summarises, as a table with a status for each check (\code{"ok"}, \code{"warning"}
+Summarizes, as a table with a status for each check (\code{"ok"}, \code{"warning"}
 or \code{"fail"}) and the recommended action, the diagnostics available in a
-fitted model. \code{\link[=verify_fit]{verify_fit()}} adds checks that require extra optimisations
+fitted model. \code{\link[=verify_fit]{verify_fit()}} adds checks that require extra optimizations
 (independent runs, more effort, wider bounds).
 }
 \details{
-A simulated likelihood is noisy and the optimiser can stop at a suboptimal
+A simulated likelihood is noisy and the optimizer can stop at a suboptimal
 point. A fit should be reported only when no check fails, and warnings
 should be understood and, when possible, removed by acting on them.
 }

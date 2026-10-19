@@ -68,7 +68,7 @@ f1 <- fits[[1]]
 m <- f1$model; ctl <- f1$control
 spec <- data.frame(
   Item = c("Process", "Search times", "Handling times", "Fixed parameters", "Estimation of z",
-           "Trial duration", "Optimiser", "Simulated trials per density", "Generations x population",
+           "Trial duration", "Optimizer", "Simulated trials per density", "Generations x population",
            "Re-evaluations at each optimum", "funresMech version"),
   Value = c(m$process, paste0(m$search$name, ", mean 1/(a x^z)"), paste0(m$handling$name, ", mean h"),
             if (length(m$fix)) paste(names(m$fix), unlist(m$fix), sep = " = ", collapse = ", ") else "none",

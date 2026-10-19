@@ -53,8 +53,8 @@ search bounds of z are reached. The joint estimate is kept only if no
 profile point has a lower NLL. \strong{Experimental:} in simulations with
 known parameters (validation/, phase 4) the joint method gave intervals
 that covered the true z in 67\% of the datasets, against 96\% for the
-profile, because with five free parameters the neighbouring profile
-points are less well optimised. Confirm its results with the profile.}
+profile, because with five free parameters the neighboring profile
+points are less well optimized. Confirm its results with the profile.}
 
 \item{z_step}{Initial step of the adaptive profile of the joint method.}
 
@@ -74,7 +74,7 @@ Estimates the parameters of a \code{\link[=funres_model]{funres_model()}} by max
 the likelihood of the observed counts approximated by simulation of the
 foraging process (Okuyama 2012, 2026). The density-scaling exponent \code{z} is
 estimated by likelihood profiling: it is fixed at each value of a grid,
-the other parameters are optimised, and the estimate is the minimum of the
+the other parameters are optimized, and the estimate is the minimum of the
 profile. The 95\% interval contains the values of \code{z} whose negative
 log-likelihood (NLL) is no more than \code{qchisq(0.95, 1) / 2 = 1.92} above
 the minimum.
@@ -88,10 +88,10 @@ densities) is searched in \eqn{[10^{-3}, 10^4]}, \eqn{h/T} in
 \eqn{[10^{-6}, 1]}, \eqn{k} in \eqn{[10^{-5}, 100]} and \eqn{s/h} in
 \eqn{[0, 10]}. They can be changed with \code{funres_control(bounds = ...)}.
 
-\strong{Reliability.} A simulated likelihood is noisy, and an optimiser can stop
+\strong{Reliability.} A simulated likelihood is noisy, and an optimizer can stop
 at a suboptimal point; a returned estimate is not by itself evidence of a
 reliable fit. Check the \code{notes} of the result, which flag parameters on a
-search bound, large Monte Carlo noise, an optimiser still improving at the
+search bound, large Monte Carlo noise, an optimizer still improving at the
 end of the run and open intervals, and act on them.
 }
 \examples{

@@ -1,5 +1,5 @@
 // ============================================================
-// src/motor.cpp
+// src/engine.cpp
 //
 // Simulation engine of the mechanistic (simulation-based likelihood)
 // functional response model (Okuyama 2012, 2026), compiled with Rcpp.
@@ -346,23 +346,23 @@ IntegerVector sim_trials_cpp(int H, double a, double h, double z, double k,
 // Engine of version 1.1.0 (Gamma search, Lognormal handling, parasitoid),
 // kept with its original signature: the regression tests call it.
 // [[Rcpp::export]]
-IntegerVector motor_okuyama_cpp(int H, double a, double h, double z,
+IntegerVector sim_engine_cpp(int H, double a, double h, double z,
                                 double k, double s, double T,
-                                int nsim, bool corte_saturacion = true) {
+                                int nsim, bool stop_saturated = true) {
     return engine(H, a, h, z, k, s, T, nsim, S_GAMMA, HD_LNORM, false,
-                  corte_saturacion, R_NilValue, R_NilValue);
+                  stop_saturated, R_NilValue, R_NilValue);
 }
 
 // Total number of encounters over nsim trials (diagnostic used by the tests
 // to show that the saturation cut-off removes the computational trap
-// h ~ 0, k ~ 0). Returns Inf if max_vueltas is hit.
+// h ~ 0, k ~ 0). Returns Inf if max_loops is hit.
 // [[Rcpp::export]]
-double contar_vueltas_cpp(int H, double a, double h, double z,
+double count_loops_cpp(int H, double a, double h, double z,
                           double k, double s, double T, int nsim,
-                          bool corte_saturacion, double max_vueltas = 1e9) {
+                          bool stop_saturated, double max_loops = 1e9) {
     double loops = 0;
     engine(H, a, h, z, k, s, T, nsim, S_GAMMA, HD_LNORM, false,
-           corte_saturacion, R_NilValue, R_NilValue, &loops, max_vueltas);
+           stop_saturated, R_NilValue, R_NilValue, &loops, max_loops);
     return loops;
 }
 

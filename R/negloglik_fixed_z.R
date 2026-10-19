@@ -10,7 +10,7 @@
 # domain so that DEoptim discards them without failing.
 
 negloglik_fixed_z <- function(par_vec, z_fixed, data_spp, T, n_sim = 1500,
-                              corte_saturacion = TRUE) {
+                              stop_saturated = TRUE) {
 
   a <- par_vec[[1]]
   h <- par_vec[[2]]
@@ -30,8 +30,8 @@ negloglik_fixed_z <- function(par_vec, z_fixed, data_spp, T, n_sim = 1500,
     y_obs <- data_spp$par[data_spp$dens == x]
     if (anyNA(y_obs) || any(y_obs < 0 | y_obs > x)) return(1e10)
 
-    sim  <- motor_okuyama_cpp(as.integer(x), a, h, z_fixed, k, s, T,
-                              as.integer(n_sim), corte_saturacion)
+    sim  <- sim_engine_cpp(as.integer(x), a, h, z_fixed, k, s, T,
+                              as.integer(n_sim), stop_saturated)
     frec <- tabulate(sim + 1L, nbins = x + 1L) / n_sim
     nll  <- nll - sum(log(pmax(frec[y_obs + 1L], minp)))
   }

@@ -84,7 +84,7 @@ NULL
   selectInput(id, "Species or group", choices = character(0))
 }
 
-# Colour of the navigation bar: bslib >= 0.9.0 takes it through
+# Color of the navigation bar: bslib >= 0.9.0 takes it through
 # navbar_options(); older versions through the bg / inverse arguments.
 .navbar_args <- function() {
   if (utils::packageVersion("bslib") >= "0.9.0") {
@@ -184,7 +184,7 @@ ui <- function() {
               ),
               conditionalPanel(
                 "input.search != 'exponential'",
-                checkboxInput("fix_k", .lab("Fix k", "Hold the search dispersion (or the shape of a custom search sampler) at a known value instead of estimating it. Fewer free parameters make the optimisation more stable."), FALSE),
+                checkboxInput("fix_k", .lab("Fix k", "Hold the search dispersion (or the shape of a custom search sampler) at a known value instead of estimating it. Fewer free parameters make the optimization more stable."), FALSE),
                 conditionalPanel("input.fix_k", numericInput("k_value", "k", 1, min = 1e-8))
               ),
               conditionalPanel(
@@ -195,7 +195,7 @@ ui <- function() {
             ),
             bslib::accordion_panel(
               "Exponent z",
-              radioButtons("z_mode", .lab("Estimation of z", "Profile: z fixed at each grid value and the others optimised; the estimate is the minimum. Joint (experimental): z estimated with the other parameters, then profiled only around the estimate; in validation its intervals under-covered the true z (67% vs 96% for the profile). Fixed: z held at a value (e.g. 1 for a type II response)."),
+              radioButtons("z_mode", .lab("Estimation of z", "Profile: z fixed at each grid value and the others optimized; the estimate is the minimum. Joint (experimental): z estimated with the other parameters, then profiled only around the estimate; in validation its intervals under-covered the true z (67% vs 96% for the profile). Fixed: z held at a value (e.g. 1 for a type II response)."),
                            c("Profile over a grid" = "profile", "Joint, then profile (experimental)" = "joint",
                              "Fixed" = "fixed")),
               conditionalPanel(
@@ -212,7 +212,7 @@ ui <- function() {
                                numericInput("z_value", "z", 1, min = 0.01))
             ),
             bslib::accordion_panel(
-              "Optimisation",
+              "Optimization",
               selectInput("preset", .lab("Preset", "Exploratory: a quick first look, not for reporting. Standard: default. Final: the configuration of Okuyama (2026). Values below can be edited."),
                           c("Exploratory" = "exploratory", "Standard" = "standard", "Final" = "final"),
                           selected = "standard"),
@@ -220,14 +220,14 @@ ui <- function() {
                   div(class = "col-6", numericInput("n_sim", .lab("n_sim", "Simulated trials per density for each evaluation of the likelihood. More = less Monte Carlo noise."), 5000, min = 100, step = 500)),
                   div(class = "col-6", numericInput("n_reeval", .lab("Re-evaluations", "Fresh evaluations of the likelihood at each optimum; their mean is used for the profile and the interval."), 5, min = 1))),
               div(class = "row g-2",
-                  div(class = "col-6", numericInput("itermax", .lab("Generations", "itermax: iterations of the optimiser."), 100, min = 5)),
+                  div(class = "col-6", numericInput("itermax", .lab("Generations", "itermax: iterations of the optimizer."), 100, min = 5)),
                   div(class = "col-6", numericInput("NP", .lab("Population", "NP: candidate solutions per generation."), 40, min = 4))),
-              selectInput("method", .lab("Method", "Global optimiser, with the same budget of evaluations (generations x population)."),
+              selectInput("method", .lab("Method", "Global optimizer, with the same budget of evaluations (generations x population)."),
                           c("Differential evolution (DEoptim)" = "DEoptim",
                             "CMA-ES (package cmaes)" = "CMAES",
                             "CRS2 (package nloptr)" = "CRS2")),
               checkboxInput("widen", .lab("Widen bounds hit at the optimum", "If the optimum ends on a search bound, the bound is widened tenfold and the affected points refitted (up to twice)."), TRUE),
-              checkboxInput("crn", .lab("Common random numbers", "The same random seed in every evaluation during the search, so the objective is deterministic (but stepwise). Re-evaluations use fresh numbers. Default: in validation it made the optimiser far more reliable."), TRUE),
+              checkboxInput("crn", .lab("Common random numbers", "The same random seed in every evaluation during the search, so the objective is deterministic (but stepwise). Re-evaluations use fresh numbers. Default: in validation it made the optimizer far more reliable."), TRUE),
               checkboxInput("polish", .lab("Polish the optimum (Nelder-Mead)", "200 extra evaluations of a local search from the best point. Default, together with common random numbers."), TRUE),
               numericInput("seed", .lab("Random seed", "Same seed and settings give the same results."), 1, min = 1, step = 1),
               bslib::input_switch("parallel", "Parallel computation", TRUE),
@@ -384,7 +384,7 @@ ui <- function() {
       bslib::card_header("Workflow"),
       tags$ol(
         tags$li("Data: load a CSV with one row per trial (host or prey density and the number parasitized or consumed; optionally a species or group column). Screen for atypical trials."),
-        tags$li("Model and fit: set T and its unit, choose the process and the distributions of search and handling times (built-in or your own), decide which parameters to fix, how to estimate z, and the optimisation settings. Estimate the run time, then fit."),
+        tags$li("Model and fit: set T and its unit, choose the process and the distributions of search and handling times (built-in or your own), decide which parameters to fix, how to estimate z, and the optimization settings. Estimate the run time, then fit."),
         tags$li("Reliability: read the checks of each fit and run the verification. Act on every warning or failure before using the results."),
         tags$li("Results: estimates, interval of z, AIC against z = 1 and against a Beta-Binomial model, profile and simulated response."),
         tags$li("Model comparison: fit alternative specifications of the foraging process to the same data and compare them by AIC."),
@@ -393,7 +393,7 @@ ui <- function() {
       tags$h6("The model"),
       p("The likelihood of each observed count is the frequency of that count in trials simulated from the foraging process (Okuyama 2012, 2026): a consumer alternates search, with mean time 1/(a x^z) at density x, and handling, with mean time h, until the trial duration T is reached. z = 1 gives a type II response and z > 1 a type III response. The distributions of search and handling times are assumptions; no family is correct by default, and the application lets you choose them, write your own and compare the fits."),
       tags$h6("Defaults are a starting point"),
-      p("A simulated likelihood is noisy and the optimiser can stop at a suboptimal point. The exploratory preset is for a first look only. Report results only from fits whose checks pass, preferably verified, and state the settings used.")
+      p("A simulated likelihood is noisy and the optimizer can stop at a suboptimal point. The exploratory preset is for a first look only. Report results only from fits whose checks pass, preferably verified, and state the settings used.")
     ),
     bslib::card(
       bslib::card_header("Reading the reliability checks"),
@@ -402,11 +402,11 @@ ui <- function() {
         tags$tbody(
           tags$tr(tags$td("Observed outcomes never simulated"), tags$td("Parameters far from the data, too few simulations, or an outcome the model cannot produce"), tags$td("Increase n_sim; check atypical trials; consider another process or distribution")),
           tags$tr(tags$td("Estimate on a search bound"), tags$td("Bound too narrow, or parameter not identified"), tags$td("Widen the bound and refit; if it persists, fix the parameter or interpret it as a limit")),
-          tags$tr(tags$td("Large Monte Carlo SE or optimiser gap"), tags$td("Too few simulated trials"), tags$td("Increase n_sim")),
+          tags$tr(tags$td("Large Monte Carlo SE or optimizer gap"), tags$td("Too few simulated trials"), tags$td("Increase n_sim")),
           tags$tr(tags$td("Still improving at the end of the run"), tags$td("Too few generations"), tags$td("Increase generations and population")),
-          tags$tr(tags$td("Independent runs disagree"), tags$td("Optimiser stops at different points"), tags$td("More effort; do not report until runs agree")),
+          tags$tr(tags$td("Independent runs disagree"), tags$td("Optimizer stops at different points"), tags$td("More effort; do not report until runs agree")),
           tags$tr(tags$td("More effort or wider bounds improve the optimum"), tags$td("Settings insufficient"), tags$td("Refit the whole profile with the final preset or wider bounds")),
-          tags$tr(tags$td("Profile of z with several minima"), tags$td("The optimiser failed at some values of z"), tags$td("Increase generations, population and n_sim; do not use the interval until the profile is regular")),
+          tags$tr(tags$td("Profile of z with several minima"), tags$td("The optimizer failed at some values of z"), tags$td("Increase generations, population and n_sim; do not use the interval until the profile is regular")),
           tags$tr(tags$td("Open interval of z"), tags$td("The data do not bound z on that side (often with very small k)"), tags$td("Extend the grid; check atypical trials; report the limit as open")),
           tags$tr(tags$td("Very small k"), tags$td("Very irregular search, ridge between z, a and k"), tags$td("Check atypical trials; compare with k fixed (exponential search) by AIC"))
         )
