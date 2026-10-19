@@ -1,38 +1,36 @@
-## funresMech 1.1.0 (update of 1.0.4)
+## funresMech 1.2.0 (update of 1.1.0)
 
-This is an update of the version on CRAN (1.0.4). It replaces the simulation
-and optimization core of the package; the statistical model is unchanged
-(Okuyama 2012, 2026). Details are in NEWS.md.
+This is an update of the version on CRAN (1.1.0). Details are in NEWS.md.
 
-* The stochastic simulator is now written in C++ with 'Rcpp' (new
-  `Imports`/`LinkingTo` dependency: 'Rcpp'). The package therefore needs
-  compilation (`src/motor.cpp`).
-* Results can differ from 1.0.4 by design: `s` is now the standard deviation
-  of the handling time on the natural scale, the 95% interval of `z` uses the
-  likelihood-ratio threshold of 1.92 (1.0.4 used 3.84) and the optimization is
-  carried out on the log scale with wider bounds. These changes are
-  documented in NEWS.md.
+* New exported functions to specify the foraging process (`funres_model()`,
+  `funres_sampler()`, `test_sampler()`), fit and verify models
+  (`fit_funres()`, `funres_control()`, `verify_fit()`, `reliability()`),
+  screen the data (`screen_outliers()`), and simulate experiments
+  (`simulate_response()`).
+* Four vignettes (built with 'knitr'; the code chunks that take minutes are
+  not evaluated).
+* Results can differ from 1.1.0 by design: the default settings, the search
+  bounds (now independent of the time unit), the optimizer (differential
+  evolution with common random numbers and a Nelder-Mead polish), and the
+  construction of the interval of `z` changed. These changes are listed in
+  NEWS.md under "Changes that alter results". The default model reproduces
+  the simulation engine of 1.1.0 exactly with the same seed.
+* New suggested packages: 'cmaes' and 'nloptr' (alternative optimizers, used
+  only when requested) and 'knitr' (vignettes).
 * No `set.seed()` is called inside the package; all randomness is controlled
   by the caller. The package writes nothing outside `tempdir()`.
-* Tests: `tests/testthat/test-modelos.R` checks the C++ engine against a
-  pure-R reference implementation, the likelihood-ratio interval, the profile
-  fit and the screening of atypical trials. The slow tests use
-  `skip_on_cran()`.
+* The slow tests use `skip_on_cran()`.
 
 ## Test environments
 
-* Local: Windows 11 x64, R 4.6.1 (2026-06-24 ucrt), Rtools45 (GCC 14.3.0).
-* win-builder, R-devel (R Under development, 2026-09-30 r90605 ucrt).
+* Linux (Ubuntu), R 4.3.3: `R CMD check --as-cran`.
+* To be completed before submission: local Windows 11 x64, R 4.6.1, Rtools45;
+  win-builder, R-devel.
 
 ## R CMD check results
 
-Local, `devtools::check(args = "--as-cran")`:
+Linux, R 4.3.3: 0 errors | 0 warnings. The notes were due to the check
+environment (no internet access for URL checks, no system clock
+verification).
 
-0 errors | 0 warnings | 0 notes
-
-`devtools::test()`: 79 expectations passed, 0 failures, 0 warnings.
-
-win-builder, R-devel (R Under development (unstable) (2026-09-30 r90605 ucrt)),
-`devtools::check_win_devel()`:
-
-Status: OK
+To be completed before submission with the Windows and win-builder results.

@@ -13,7 +13,7 @@ golden <- readRDS(test_path("fixtures", "golden_1.1.0.rds"))
 d2 <- read.csv(test_path("fixtures", "D2.csv"))
 d3 <- read.csv(test_path("fixtures", "D3.csv"))
 
-test_that("anchor: NLL of D3 equals the value of Okuyama's code (132.04994217)", {
+test_that("anchor: NLL of D3 equals the value of the supplementary code of the method (132.04994217)", {
   set.seed(88)
   nll <- funresMech:::negloglik_fixed_z(c(0.012, 0.626, 0.902, 0.542),
                                         z_fixed = 2.5, data_spp = d3, T = 24,

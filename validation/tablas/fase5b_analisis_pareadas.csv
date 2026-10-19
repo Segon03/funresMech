@@ -1,3 +1,0 @@
-"comparacion","n","cobertura_ref","cobertura_nueva","solo_ref_cubre","solo_nueva_cubre","p_mcnemar","mismo_zhat","ancho_med_ref","ancho_med_nueva","horas_ref","horas_nueva","nll_mejor_g2"
-"G1 (1.2.0rc2) vs Fase 5 (mismos datos)",144,0.902777777777778,0.902777777777778,5,5,1,0.479166666666667,1.04093121157614,0.984632759644875,0.80114430941358,0.932378973765432,NA
-"G2 standard vs G1 exploratory (mismos datos)",72,0.888888888888889,0.888888888888889,0,0,1,0.611111111111111,0.992458647059623,0.996451318459337,0.928585339506172,4.18017353395062,0.0833333333333333

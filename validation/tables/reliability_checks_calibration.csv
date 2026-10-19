@@ -1,0 +1,26 @@
+"preset","check","fits","alerts","failures","alerts_in_good_fits"
+"exploratory","Estimates away from search bounds",216,0,0,0
+"exploratory","Independent runs agree (NLL)",216,0.50462962962963,0.0185185185185185,0.497435897435897
+"exploratory","Independent runs agree (a, h)",216,0.0648148148148148,0,0.0666666666666667
+"exploratory","Interval of z closed",216,0.00925925925925926,0,0.00512820512820513
+"exploratory","Monte Carlo noise of the NLL",216,0.291666666666667,0,0.297435897435897
+"exploratory","More effort does not improve the optimum",216,0.0277777777777778,0.0277777777777778,0.0307692307692308
+"exploratory","Observed outcomes produced by the simulation",216,0.00462962962962963,0,0.00512820512820513
+"exploratory","Optimizer settled before the end of the run",216,0.569444444444444,0,0.584615384615385
+"exploratory","Optimizer value vs re-evaluated NLL",216,0.037037037037037,0,0.0358974358974359
+"exploratory","Profile of z regular (one minimum)",216,0.0185185185185185,0.0185185185185185,0.0153846153846154
+"exploratory","Search dispersion k not extreme",216,0.0416666666666667,0,0.0256410256410256
+"exploratory","Settings suitable for reporting",216,1,0,1
+"exploratory","Wider bounds do not improve the optimum",216,0.0138888888888889,0.0138888888888889,0.0153846153846154
+"standard","Estimates away from search bounds",72,0,0,0
+"standard","Independent runs agree (NLL)",72,0.0694444444444444,0,0.0625
+"standard","Independent runs agree (a, h)",72,0.0416666666666667,0,0.03125
+"standard","Interval of z closed",72,0.0277777777777778,0,0.015625
+"standard","Monte Carlo noise of the NLL",72,0.0277777777777778,0,0.03125
+"standard","More effort does not improve the optimum",72,0,0,0
+"standard","Observed outcomes produced by the simulation",72,0,0,0
+"standard","Optimizer settled before the end of the run",72,0,0,0
+"standard","Optimizer value vs re-evaluated NLL",72,0,0,0
+"standard","Profile of z regular (one minimum)",72,0,0,0
+"standard","Search dispersion k not extreme",72,0,0,0
+"standard","Wider bounds do not improve the optimum",72,0,0,0
