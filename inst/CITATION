@@ -1,0 +1,31 @@
+bibentry(
+  bibtype = "Manual",
+  header  = "To cite the package in publications, please use:",
+  title   = "funresMech: Mechanistic Functional Response Analysis with Simulation-Based Likelihood",
+  author  = person("Segundo", "Núñez-Campero"),
+  year    = "2026",
+  note    = "R package version 1.2.0",
+  doi     = "10.32614/CRAN.package.funresMech",
+  url     = "https://CRAN.R-project.org/package=funresMech"
+)
+
+bibentry(
+  bibtype = "Article",
+  header  = "Please also cite the method:",
+  title   = "A likelihood approach for functional response models",
+  author  = person("Toshinori", "Okuyama"),
+  journal = "Biological Control",
+  year    = "2012",
+  volume  = "60",
+  pages   = "103--107",
+  doi     = "10.1016/j.biocontrol.2011.10.008"
+)
+
+bibentry(
+  bibtype = "Article",
+  title   = "Parametric assumptions in parasitoid functional response analysis",
+  author  = person("Toshinori", "Okuyama"),
+  journal = "Journal of Applied Entomology",
+  year    = "2026",
+  doi     = "10.1111/jen.70148"
+)

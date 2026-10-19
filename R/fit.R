@@ -22,7 +22,7 @@ NULL
 #' | standard | 5000 | 100 | 40 | 5 |
 #' | final | 10000 | 200 | 40 | 5 |
 #'
-#' The final preset is the configuration of Okuyama (2026).
+#' The final preset reproduces the settings of the published analyses of this method (Okuyama 2026).
 #'
 #' **Default optimizer.** Differential evolution with common random numbers
 #' and a Nelder-Mead polish was chosen in a comparison of strategies with

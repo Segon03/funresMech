@@ -1,0 +1,80 @@
+---
+title: "Time units, search bounds and open intervals"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Time units, search bounds and open intervals}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+## Time units
+
+The trial duration `T`, the handling time `h` and its standard deviation `s`
+share the time unit of the experiment, and the encounter-rate coefficient
+`a` is per unit of time. The unit can be minutes, hours, days or anything
+else: internally, funresMech measures time in units of `T`, so the same
+experiment entered in hours or in minutes gives the same fit, with `h` and
+`s` converted and `a` scaled accordingly. Give the unit a name for printed
+output:
+
+```{r units}
+fit_h   <- fit_funres(d, T = 24,   time_unit = "h")
+fit_min <- fit_funres(d, T = 1440, time_unit = "min")
+# h and s of fit_min are 60 times those of fit_h; a is 60 times smaller;
+# z, k and the likelihood are identical (with the same random seed)
+```
+
+## Search bounds
+
+The optimizer searches each parameter within bounds, on a dimensionless and
+mostly logarithmic scale. The default bounds are wide and do not depend on
+the time unit:
+
+| Parameter searched | Default range | Meaning |
+|---|---|---|
+| `lambda` | 10^−3^ to 10^4^ | Expected number of encounters per trial at the reference density (the geometric mean of the densities). |
+| `h` | 10^−6^ *T* to *T* | Mean handling time. A handling time longer than the trial would allow at most one attack. |
+| `k` | 10^−5^ to 100 | Regularity of search times (squared coefficient of variation 1/`k`). |
+| `cv_h` | 0 to 10 | Coefficient of variation of handling times, `s`/`h`. |
+| `z` | 0.1 to 20 | Density-scaling exponent. |
+
+Searching the encounters at the reference density instead of `a` keeps the
+useful range independent of `z`: at large `z`, `a` must be many orders of
+magnitude smaller, but the number of encounters stays in the same range.
+
+When an estimate ends on a bound, `fit_funres()` widens that bound tenfold
+and refits the affected points of the profile, at most twice
+(`funres_control(widen = 2)`). The reliability check "Estimates away from
+search bounds" reports any estimate that is still on a bound. Bounds can also
+be set by the user, in natural units:
+
+```{r bounds}
+ctrl <- funres_control("standard", bounds = list(h = c(0.01, 5), k = c(0.01, 50)))
+```
+
+## The grid of z
+
+The likelihood profile is computed on a grid of `z` (by default 0.5 to 5 in
+steps of 0.25, plus `z` = 1). Then:
+
+* If the profile does not cross the 95% threshold above the estimate, the
+  grid is extended to `z` = 8, 10, 15 and 20; if it does not cross it below,
+  to `z` = 0.25 and 0.1.
+* Extra points are added around the estimate and where the profile crosses
+  the threshold, so that the limits are interpolated from close points.
+
+## Open intervals
+
+An interval of `z` that remains open after the extension means that the data
+do not bound `z` on that side: values up to the end of the grid fit almost as
+well as the estimate. This usually happens when search times are extremely
+variable (very small `k`). Then `z`, `a` and `k` compensate for one another,
+and the profile becomes flat. Report the limit as open.
+
+An open limit can also be caused by a single atypical trial. Check the
+screening (`screen_outliers()`) and, if a trial is flagged, compare the fits
+with and without it.

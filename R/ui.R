@@ -213,7 +213,7 @@ ui <- function() {
             ),
             bslib::accordion_panel(
               "Optimization",
-              selectInput("preset", .lab("Preset", "Exploratory: a quick first look, not for reporting. Standard: default. Final: the configuration of Okuyama (2026). Values below can be edited."),
+              selectInput("preset", .lab("Preset", "Exploratory: a quick first look, not for reporting. Standard: default. Final: the settings used in published analyses with this method (10000 simulations, 200 generations). Values below can be edited."),
                           c("Exploratory" = "exploratory", "Standard" = "standard", "Final" = "final"),
                           selected = "standard"),
               div(class = "row g-2",

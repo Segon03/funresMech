@@ -1,0 +1,197 @@
+---
+title: "Getting started with funresMech"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with funresMech}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(funresMech)
+```
+
+## What the package does
+
+A functional response experiment exposes one consumer (a parasitoid or a
+predator) to a known number of hosts or prey for a fixed time and records how
+many were parasitized or consumed. funresMech fits a *mechanistic* model to
+these counts: instead of assuming that the counts follow a binomial or
+beta-binomial distribution, it simulates the foraging process (searching,
+encountering and handling hosts) many times and uses the simulated
+frequencies as the probability of each possible count (Okuyama 2012, 2026).
+The parameters are then estimated by maximum likelihood.
+
+The model has five parameters:
+
+| Parameter | Meaning |
+|---|---|
+| `a` | Encounter-rate coefficient. The encounter rate at density *x* is a *x*^*z*. |
+| `z` | Density-scaling exponent. *z* = 1 gives a type II response and *z* > 1 a type III (sigmoid) response. |
+| `h` | Mean handling time, in the time unit of the experiment. |
+| `k` | Regularity of search times: their squared coefficient of variation is 1/*k*. Small *k* means very irregular search. |
+| `s` | Standard deviation of handling times. `s = 0` means a fixed handling time. |
+
+The main question is usually the value of *z*, so *z* is estimated by
+likelihood profiling: it is fixed at each value of a grid, the other
+parameters are optimized, and the 95% interval contains the values of *z*
+whose negative log-likelihood (NLL) is at most 1.92 units above the minimum.
+
+## The data
+
+One row per trial, with the host (or prey) density and the number of hosts
+parasitized (or prey consumed). The default column names are `dens` and
+`par`; other names are given with the arguments `dens` and `response`.
+
+```{r data}
+d <- data.frame(
+  dens = rep(c(2, 5, 10, 20, 40), each = 6),
+  par  = c(1, 2, 1, 2, 2, 1,  4, 3, 4, 5, 4, 3,  7, 8, 6, 8, 7, 9,
+           11, 12, 13, 10, 12, 11,  16, 15, 17, 14, 16, 18)
+)
+head(d)
+```
+
+## Step 1: screen the data
+
+Some trials can be very unlikely under the rest of the data, for example a
+trial in which a parasitoid attacked almost nothing at a density where all
+other parasitoids attacked most hosts. Such a trial can dominate the fit.
+`screen_outliers()` flags these trials in a few seconds. It never removes
+them: check flagged trials in the original records and, if they are kept,
+report the analysis with and without them.
+
+```{r screen}
+scr <- screen_outliers(d, T = 24)
+scr[scr$flagged, ]
+```
+
+## Step 2: specify the model
+
+`funres_model()` defines the foraging process. The default has Gamma search
+times, lognormal handling times and the parasitoid process (attacked hosts
+remain available and can be found again).
+
+```{r model}
+funres_model()
+```
+
+Other choices are described in
+`vignette("process-and-distributions", package = "funresMech")`.
+
+## Step 3: fit
+
+`fit_funres()` needs the data, the trial duration `T` and, optionally, the
+model and the settings. The settings are chosen with a preset of
+`funres_control()`:
+
+* `"exploratory"`: a quick first look. **Not for reporting.**
+* `"standard"` (default): for results to be reported, after verification.
+* `"final"`: the highest precision.
+
+```{r presets}
+funres_control("standard")
+```
+
+The likelihood is approximated by simulation, so a fit takes from minutes to
+hours. Evaluate the profile in parallel to save time:
+
+```{r fit, eval = FALSE}
+future::plan(future::multisession)       # use the available processor cores
+set.seed(1)                              # results are reproducible with the seed
+fit <- fit_funres(d, T = 24, time_unit = "h",
+                  control = funres_control("standard"))
+fit
+```
+
+The printed fit shows the estimates with their units, the 95% interval of
+*z*, the AIC comparison with *z* = 1 and with a beta-binomial model, and a
+summary of the reliability checks. This is the output of an exploratory fit
+of a real dataset (64 trials, 13 densities):
+
+```
+Mechanistic functional response model (simulation-based likelihood)
+  Process:        parasitoid (hosts not removed; distinct hosts counted)
+  Search times:   gamma, mean 1/(a x^z), CV^2 = 1/k
+  Handling times: lognormal, mean h, SD s
+  Free parameters: a, h, z, k, s
+
+Estimates (T = 24 h; 64 trials):
+  a  = 0.01439      encounter-rate coefficient (1/h)
+  h  = 0.5912       mean handling time (h)
+  z  = 2            density-scaling exponent
+  k  = 0.0172       search dispersion (CV^2 = 1/k)
+  s  = 0.3452       SD of handling time (h)
+  95% interval of z: [1.64, open]
+
+Reliability: WARNING (cheap checks only; run verify_fit() before reporting).
+ * [warning] Monte Carlo noise of the NLL: SE of the NLL at the optimum = 0.505
+ * [warning] Interval of z closed: open upper limit
+ * [warning] Search dispersion k not extreme: k = 0.0172
+ * [warning] Settings suitable for reporting: exploratory preset
+```
+
+Here the warnings say what to do next: refit with the standard preset (less
+Monte Carlo noise) and look at the open upper limit of *z*, which goes
+together with a very small *k*.
+
+## Step 4: verify before reporting
+
+`verify_fit()` refits the model at the estimate of *z* in independent runs,
+with more effort and with wider search bounds. `reliability()` then lists
+every check with its status and the recommended action.
+
+```{r verify, eval = FALSE}
+fit <- verify_fit(fit)
+reliability(fit)
+```
+
+Report a fit only when no check fails, and act on the warnings. See
+`vignette("reliability", package = "funresMech")`.
+
+## Step 5: use the fit
+
+```{r use, eval = FALSE}
+coef(fit)                 # estimates
+fit$ci                    # interval of z
+fit$profile               # likelihood profile of z
+fit$aic                   # comparison with z = 1 and with the beta-binomial model
+
+# Simulated experiments under the fitted model, for example to compare their
+# distribution with the data or to plan a new experiment
+sims <- simulate_response(fit$model, dens = c(2, 10, 40), T = 24,
+                          par = coef(fit), n_sim = 1000)
+```
+
+`simulate_response()` can also be used before an experiment to see which
+designs can distinguish type II from type III responses:
+
+```{r simulate}
+set.seed(1)
+sims <- simulate_response(dens = c(2, 10, 40), T = 24,
+                          par = c(a = 0.012, h = 0.6, z = 2.5, k = 0.9, s = 0.5),
+                          n_sim = 200)
+tapply(sims$response, sims$dens, mean)
+```
+
+## The interactive application
+
+Every step above is available without writing code:
+
+```{r app, eval = FALSE}
+run_app()
+```
+
+The application reads a CSV file, lets you choose the columns, the time
+unit, the model and the preset, runs the fit and the verification, and
+exports the results, an R script that repeats the analysis and an HTML
+report.
+
+## References
+
+Okuyama T (2012). A likelihood approach for functional response models.
+*Biological Control* 60: 103–107.
+
+Okuyama T (2026). Parametric assumptions in parasitoid functional response
+analysis. *Journal of Applied Entomology*.

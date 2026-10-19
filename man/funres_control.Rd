@@ -97,7 +97,7 @@ diagnostics returned by \code{\link[=fit_funres]{fit_funres()}} whatever the pre
 }
 
 
-The final preset is the configuration of Okuyama (2026).
+The final preset reproduces the settings of the published analyses of this method (Okuyama 2026).
 
 \strong{Default optimizer.} Differential evolution with common random numbers
 and a Nelder-Mead polish was chosen in a comparison of strategies with

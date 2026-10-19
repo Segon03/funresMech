@@ -7,7 +7,7 @@
 simulate_response(model = funres_model(), dens, T, par, n_sim = 1000)
 }
 \arguments{
-\item{model}{A \code{\link[=funres_model]{funres_model()}}; the default is the model of Okuyama (2026).}
+\item{model}{A \code{\link[=funres_model]{funres_model()}}; the default has Gamma search times and lognormal handling times.}
 
 \item{dens}{Host (or prey) densities (positive integers).}
 

@@ -123,9 +123,16 @@ print.funres_sampler <- function(x, ...) {
 #' (superparasitism), and the response is the number of distinct hosts
 #' attacked. `"predator"`: each encounter consumes one prey, which is removed,
 #' so the encounter rate falls to \eqn{a (x - n)^z} after \eqn{n} captures.
-#' The choice should follow the biology of the system rather than the taxon:
-#' a parasitoid that never revisits parasitized hosts behaves as the predator
-#' process (Okuyama 2026, Appendix S1).
+#' The choice should follow the biology of the system rather than the taxon.
+#' For a parasitoid, the predator process represents perfect and cost-free
+#' discrimination of parasitized hosts: once attacked, a host is no longer
+#' encountered, so it costs neither search nor handling time (Okuyama 2026,
+#' Appendix S1). It does not represent host feeding, in which the host is
+#' killed without being parasitized and would not be counted in the response.
+#' Real behavior may lie between the two processes (partial or costly
+#' discrimination), which neither process represents exactly. The process
+#' can change the estimate of `z`, so when it is uncertain fit both and
+#' compare them by AIC (they have the same number of parameters).
 #'
 #' The distributions are assumptions of the analysis. No family is correct by
 #' default; when the biology of the system suggests another distribution,
@@ -147,7 +154,7 @@ print.funres_sampler <- function(x, ...) {
 #' Okuyama, T. (2026). Journal of Applied Entomology. \doi{10.1111/jen.70148}
 #' @seealso [fit_funres()], [simulate_response()], [funres_sampler()]
 #' @examples
-#' funres_model()                                   # default of Okuyama (2026)
+#' funres_model()                                   # default: Gamma search, lognormal handling
 #' funres_model(search = "exponential", handling = "constant")
 #' funres_model(search = "weibull", handling = "gamma", process = "predator")
 #' funres_model(fix = list(z = 1))                  # type II response
@@ -246,7 +253,7 @@ print.funres_model <- function(x, ...) {
 #' values. Useful to explore a model, to check a fit (compare the simulated
 #' distributions with the data) and to design experiments.
 #'
-#' @param model A [funres_model()]; the default is the model of Okuyama (2026).
+#' @param model A [funres_model()]; the default has Gamma search times and lognormal handling times.
 #' @param dens Host (or prey) densities (positive integers).
 #' @param T Trial duration, in the time unit of `h` and `s` (and the inverse of
 #'   the unit of the encounter rate).

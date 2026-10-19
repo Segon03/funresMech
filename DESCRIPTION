@@ -41,6 +41,7 @@ Suggests:
     knitr,
     nloptr,
     testthat (>= 3.0.0)
+VignetteBuilder: knitr
 URL: https://github.com/Segon03/funresMech
 BugReports: https://github.com/Segon03/funresMech/issues
 Roxygen: list(markdown = TRUE)

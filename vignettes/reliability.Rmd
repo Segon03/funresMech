@@ -1,0 +1,122 @@
+---
+title: "How reliable is my fit?"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{How reliable is my fit?}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
+```
+
+A simulation-based likelihood is computed from a finite number of simulated
+trials, so it is noisy, and the optimizer searches a five-dimensional space
+with that noisy function. A returned estimate is therefore not, by itself,
+evidence of a reliable fit. This vignette explains what can go wrong, how
+funresMech detects it and what to do.
+
+## What can go wrong
+
+| Problem | Why it happens |
+|---|---|
+| Monte Carlo noise | Each evaluation of the likelihood uses a finite number of simulated trials (`n_sim`). Two evaluations at the same parameters give slightly different values. |
+| Optimizer stopped early | The optimizer has a limited number of generations (`itermax`) and population size (`NP`). |
+| Optimizer exploited the noise | The minimum found during the search is biased downward because it is the smallest of many noisy values. funresMech therefore uses the mean of independent re-evaluations at each optimum. |
+| Estimate on a search bound | The optimum may lie outside the default search range. Bounds are widened automatically, but the check remains. |
+| Weak identification | With very irregular search times (small `k`), several combinations of `a`, `z` and `k` fit almost equally well and the interval of `z` can stay open. |
+| Observed outcomes never simulated | If no simulated trial produces an observed count, its probability is set to a tiny floor that adds 708 units to the NLL. More simulations usually resolve it. |
+
+## The checks
+
+`reliability(fit)` returns one row per check, with a status (`ok`,
+`warning` or `fail`), the value that was checked and the recommended action.
+`verify_fit(fit)` adds the checks that need extra optimizations.
+
+| Check | Warning or failure when | Action |
+|---|---|---|
+| Observed outcomes produced by the simulation | An observed count was never simulated at the optimum (fail) or at other profile points (warning). | Increase `n_sim`; check atypical trials; check that the model can produce these outcomes. |
+| Estimates away from search bounds | An estimate ends on a bound. | Widen the bounds with `funres_control(bounds = ...)`. |
+| Monte Carlo noise of the NLL | The standard error of the NLL at the optimum exceeds 0.25. | Increase `n_sim`. |
+| Optimizer value versus re-evaluated NLL | The re-evaluated NLL exceeds the optimizer's value by more than 2 units. | Increase `n_sim`. |
+| Optimizer settled before the end of the run | The NLL improved by more than 1 unit in the last quarter of the run. | Increase `itermax` (and `NP`). |
+| Profile of z regular | The profile has extra local minima beyond Monte Carlo noise. | Increase `itermax`, `NP` and `n_sim` and refit. |
+| Interval of z closed | A limit of the interval is open. | Extend the grid of `z`; an open limit after extension means that the data do not bound `z` on that side. |
+| Search dispersion k not extreme | `k` < 0.1. | Check the screening for atypical trials; consider fixing `k` and comparing by AIC. |
+| Settings suitable for reporting | The exploratory preset was used. | Refit with the standard or final preset. |
+| Independent runs agree (NLL) | The NLL of independent runs differs by more than 0.5 (warning) or 1.92 (fail). | Increase `itermax`, `NP` and `n_sim`. |
+| Independent runs agree (a, h) | `a` or `h` differ by more than 25% between runs. | More effort; interpret `a` and `h` with caution. |
+| More effort does not improve the optimum | Twice the effort improves the NLL by more than 1 unit. | Refit the whole profile with the final preset. |
+| Wider bounds do not improve the optimum | Bounds ten times wider improve the NLL by more than 1 unit. | Refit with wider bounds. |
+
+## A recommended workflow
+
+```{r workflow}
+library(funresMech)
+future::plan(future::multisession)
+
+screen_outliers(d, T = 24)                           # 1. atypical trials
+
+set.seed(1)
+fit <- fit_funres(d, T = 24,                          # 2. first look
+                  control = funres_control("exploratory"))
+reliability(fit)
+
+set.seed(2)
+fit <- fit_funres(d, T = 24,                          # 3. fit to report
+                  control = funres_control("standard"))
+fit <- verify_fit(fit)                                # 4. verification
+reliability(fit)                                      # 5. no check may fail
+```
+
+If a check fails, follow its action and refit. If the interval of `z`
+remains open after the grid was extended, report it as open: the data do not
+bound `z` on that side.
+
+## How well does the method work?
+
+The estimation procedure was evaluated with simulated data whose parameters
+were known (three values of `z`, three levels of `k`, designs with 5, 8 and 13
+host densities):
+
+* The estimates of `z` and `h` were unbiased. `k` tended to be overestimated,
+  so it should not be over-interpreted.
+* The 95% interval of `z` contained the true value in 91% of 288 fits (95%
+  confidence interval 87% to 94%). The interval is thus slightly narrower
+  than nominal. Coverage was lowest with highly variable search times
+  (`k` = 0.2) and reached 94% with 13 host densities. Numerical causes
+  (optimization, Monte Carlo noise, grid spacing, interpolation) were ruled
+  out; the remaining undercoverage is a property of the likelihood-ratio
+  interval with small samples.
+* When the true response was type II, the interval excluded `z` = 1 in 4% to
+  8% of the fits. When `z` was 1.75 or 2.75, it excluded `z` = 1 in 83% to
+  100% of the fits.
+* With the standard preset, the checks gave false alarms in at most 6% of the
+  fits. With the exploratory preset, about half of the fits received
+  warnings about noise or convergence, as intended: that preset is not meant
+  for reporting.
+* The standard preset gave the same coverage as the exploratory preset but
+  more reliable optima, so use it (or the final preset) for reporting.
+
+## Recommendations for experimental design
+
+* Use at least 8 host densities, spread over the whole range from very low to
+  saturating densities, with replicates at every density.
+* Low densities are informative about `z`, because the shape of the response
+  at low densities distinguishes type II from type III.
+* Keep the original data of every trial. Means per density cannot be
+  analyzed with this method.
+
+## What to report
+
+* The package version, the model (distributions, process, fixed
+  parameters), the preset or the settings, and the random seed.
+* The estimates with the 95% interval of `z`, stating whether a limit is
+  open.
+* The result of `reliability()` after `verify_fit()`.
+* The result of the screening for atypical trials and, if any trial was
+  flagged, the analysis with and without it.
+
+The application exports all of these, including an R script that repeats the
+analysis.

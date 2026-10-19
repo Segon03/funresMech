@@ -1,0 +1,160 @@
+---
+title: "Foraging process and distributions of search and handling times"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Foraging process and distributions of search and handling times}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+library(funresMech)
+```
+
+The likelihood in funresMech follows from explicit assumptions about how the
+consumer forages. These assumptions are part of the analysis, and funresMech
+lets the user choose them. This vignette explains the choices.
+
+## The simulated trial
+
+In each simulated trial, one consumer forages for a time `T` among `x` hosts
+(or prey):
+
+1. It searches for a random time with mean 1/(a *x*^*z*).
+2. It encounters a host (or prey) and handles it for a random time with
+   mean `h`.
+3. Steps 1 and 2 are repeated until the time `T` is used up.
+
+The number of hosts parasitized (or prey consumed) at the end of the trial
+is the simulated response. Repeating the trial thousands of times gives the
+probability of each possible response, and these probabilities give the
+likelihood of the observed data.
+
+## Parasitoid or predator process
+
+The two processes differ in what happens to a host after it is attacked.
+
+**Parasitoid process** (`process = "parasitoid"`, the default). Attacked
+hosts remain available. Each encounter is with a host chosen at random among
+all `x` hosts, so a parasitized host can be found again, and the consumer
+spends handling time on it again. The response is the number of *distinct*
+hosts attacked at least once. This is the process of a parasitoid that does
+not discriminate parasitized hosts.
+
+**Predator process** (`process = "predator"`). Each encounter removes one
+host (or prey). After *n* captures, the encounter rate falls to
+a (*x* − *n*)^*z*. For a predator, this is prey consumption. For a
+parasitoid, it represents **perfect and cost-free discrimination**: once
+parasitized, a host is never encountered again, so it costs neither search
+nor handling time.
+
+Two clarifications:
+
+* In this package, "predator process" refers only to the removal of attacked
+  hosts from the pool that the consumer encounters. It does **not**
+  represent host feeding, in which a parasitoid kills a host by feeding on it
+  without parasitizing it. Such a host would not be counted as parasitized,
+  and host feeding is not modeled.
+* Real parasitoids may discriminate partially, or spend some time rejecting
+  parasitized hosts. That behavior lies between the two processes, and
+  neither represents it exactly.
+
+The process can change the conclusions. In a reanalysis of published data
+on a parasitoid, the parasitoid process fitted better (AIC difference of
+about 5 to 6) and gave *z* > 1 (type III), whereas the predator process gave
+*z* close to 1 (type II). A better fit of one process supports, but does not
+prove, the corresponding behavior. When the process is uncertain, fit both
+models (they have the same number of parameters) and compare them by AIC,
+and check the behavior directly when possible, for example by dissecting
+hosts to detect superparasitism.
+
+```{r process}
+funres_model(process = "parasitoid")
+funres_model(process = "predator")
+```
+
+## Distributions of search times
+
+All built-in families have mean search time 1/(a *x*^*z*). Their dispersion
+is set by `k`: the squared coefficient of variation is 1/`k`, so larger `k`
+means more regular search.
+
+| `search` | Description |
+|---|---|
+| `"gamma"` (default) | Gamma with shape `k`. |
+| `"exponential"` | Gamma with `k` = 1: encounters occur at a constant rate, the assumption of the classical disc equation. |
+| `"lognormal"` | Lognormal with the same mean and coefficient of variation. |
+| `"weibull"` | Weibull with the same mean and coefficient of variation. |
+
+## Distributions of handling times
+
+All built-in families have mean `h` and standard deviation `s` on the natural
+scale (same units as `h`).
+
+| `handling` | Description |
+|---|---|
+| `"lognormal"` (default) | Lognormal with mean `h` and standard deviation `s`. |
+| `"gamma"` | Gamma with mean `h` and standard deviation `s`. |
+| `"weibull"` | Weibull with mean `h` and standard deviation `s`. |
+| `"constant"` | Every handling time equals `h` (`s` = 0). |
+
+In simulations, the choice of family mattered less than the choice of
+process. Choose the family from knowledge of the system when it exists, and
+compare alternatives by AIC when it does not.
+
+## Fixed parameters
+
+Fixing parameters reduces the number of free parameters, which makes the
+optimization more stable when the data contain little information.
+
+```{r fixed}
+funres_model(search = "exponential", handling = "constant")  # three free parameters
+funres_model(fix = list(z = 1))                               # type II response
+funres_model(fix = list(k = 2, s = 0.1))                      # known dispersions
+```
+
+A fit with `fix = list(z = 1)` is not needed to test a type II response:
+`fit_funres()` already reports the AIC of the model with *z* = 1.
+
+## Distributions written by the user
+
+Any distribution can be used through `funres_sampler()`. The sampler must
+return non-negative values with **mean 1**; the engine multiplies them by the
+required mean. Its single shape parameter is estimated (or fixed with
+`fixed = `) and is reported as `k` (search) or `s` (handling).
+
+An R function is the simplest option:
+
+```{r sampler}
+# Inverse Gaussian with mean 1 and shape parameter `shape`
+r_invgauss1 <- function(n, shape) {
+  y <- rnorm(n)^2
+  x <- 1 + y / (2 * shape) - sqrt(4 * shape * y + y^2) / (2 * shape)
+  ifelse(runif(n) <= 1 / (1 + x), x, 1 / x)
+}
+ig <- funres_sampler(r_invgauss1, lower = 0.01, upper = 100, name = "inverse Gaussian")
+test_sampler(ig, shape = c(0.5, 5), n = 1e4)   # mean should be close to 1
+m <- funres_model(search = ig)
+m
+```
+
+Samplers written in R are called in blocks of values and are slower than the
+built-in families. For speed, a compiled C++ function can be passed as an
+external pointer; see the example in `?funres_sampler`. It must use R's random
+number generator so that results are reproducible with `set.seed()`.
+
+## Comparing models
+
+Models with different processes, distributions or fixed parameters are
+compared by the AIC of their fits:
+
+```{r compare, eval = FALSE}
+set.seed(1)
+f_par  <- fit_funres(d, T = 24, model = funres_model(process = "parasitoid"))
+set.seed(1)
+f_pred <- fit_funres(d, T = 24, model = funres_model(process = "predator"))
+c(parasitoid = f_par$aic$AIC_full, predator = f_pred$aic$AIC_full)
+```
+
+The application keeps a comparison table of the fits added to it.

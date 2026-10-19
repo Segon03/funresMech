@@ -1,131 +1,145 @@
-# funresMech: Mechanistic Functional Response Analysis using the Okuyama Model
+# funresMech: Mechanistic Functional Response Analysis with Simulation-Based Likelihood
 
+<!-- badges: start -->
 [![CRAN status](https://www.r-pkg.org/badges/version/funresMech)](https://CRAN.R-project.org/package=funresMech)
-[![R-CMD-check](https://github.com/Segon03/funresMech/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/Segon03/funresMech/actions/workflows/R-CMD-check.yaml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<!-- badges: end -->
 
-## Overview
+**funresMech** fits mechanistic functional response models to experimental
+counts of hosts parasitized or prey consumed. Instead of assuming a binomial or
+beta-binomial distribution for the counts, it obtains their probability
+distribution by simulating the foraging process (search, encounter and
+handling) and estimates the parameters by maximum likelihood (Okuyama 2012,
+2026). The density-scaling exponent *z*, which distinguishes type II (*z* = 1)
+from type III (*z* > 1) responses, is estimated by likelihood profiling.
 
-**funresMech** implements the mechanistic, stochastic functional response model proposed by Okuyama (2012) and extended to parasitoids in Okuyama (2026). Unlike traditional approaches that rely on heuristic distributions (binomial or beta-binomial), this package simulates the underlying search-encounter-handling process to generate the probability distribution of the data, providing a more flexible and mechanistically sound framework for functional response analysis.
+The package is intended for ecologists who are not specialists in
+simulation-based inference. Every analysis can be run from an interactive
+application, and every result comes with diagnostics that say whether it can
+be trusted and what to do if it cannot.
 
-The package includes:
-- An interactive **Shiny application** for data exploration and model fitting.
-- **Maximum likelihood estimation** using a simulation-based likelihood.
-- **Likelihood profiles** for the density-scaling exponent *z*.
-- **Model comparison** via AIC between full (*z* free) and restricted (\\(z = 1\\)) models.
-- **Comprehensive diagnostic plots** including stochastic curves, histograms, density plots, boxplots, violins, and fan plots.
+## What the package does
+
+* **Model specification** (`funres_model()`): distributions of search times
+  (Gamma, exponential, lognormal, Weibull) and of handling times (lognormal,
+  Gamma, Weibull, constant), or distributions written by the user in R or C++
+  (`funres_sampler()`); parasitoid process (attacked hosts remain available)
+  or predator process (attacked prey are removed); parameters held fixed or
+  estimated.
+* **Estimation** (`fit_funres()`, `funres_control()`): differential evolution
+  with common random numbers and a Nelder-Mead polish; likelihood profile of
+  *z* with a 95% likelihood-ratio interval; automatic widening of search
+  bounds; comparison with *z* = 1 and with a beta-binomial model of the same
+  mean by AIC. Time is handled internally in units of the trial duration, so
+  results do not depend on whether *T* is given in minutes, hours or days.
+* **Reliability** (`reliability()`, `verify_fit()`): checks of Monte Carlo
+  noise, convergence, search bounds, the shape of the profile and the
+  agreement between independent runs, each with a recommended action.
+* **Data screening** (`screen_outliers()`): flags atypical trials before the
+  fit, without removing them.
+* **Simulation** (`simulate_response()`): simulated experiments under any
+  model, for checking fits and designing experiments.
+* **Interactive application** (`run_app()`): data upload, model
+  specification, fitting, reliability checks, plots and an HTML report,
+  without writing code.
 
 ## Installation
 
-### From CRAN
 ```r
-install.packages("funresMech")
+install.packages("funresMech")            # release on CRAN
+pak::pkg_install("Segon03/funresMech")    # development version on GitHub
 ```
 
-### From GitHub (development version)
-```r
-# Using pak (recommended)
-install.packages("pak")
-pak::pkg_install("Segon03/funresMech")
+Installing from source requires a C++ compiler (Rtools on Windows, Xcode
+command line tools on macOS).
 
-# Or using devtools
-install.packages("devtools")
-devtools::install_github("Segon03/funresMech")
-```
+## Quick start
 
-Since version 1.1.0 the package contains compiled code (C++ via 'Rcpp'). On
-Windows and macOS, installing from GitHub requires a compiler (Rtools /
-Xcode command line tools); the CRAN version is distributed as a binary.
-
-## Usage
-
-### Launch the Shiny app
 ```r
 library(funresMech)
-run_app()
+
+# One row per trial: host density and number of hosts parasitized
+d <- read.csv("my_experiment.csv")       # columns dens and par
+
+screen_outliers(d, T = 24)               # check for atypical trials first
+
+set.seed(1)
+fit <- fit_funres(d, T = 24, time_unit = "h",
+                  model = funres_model(),             # Gamma search, lognormal handling
+                  control = funres_control("standard"))
+fit                                      # estimates, interval of z, AIC, reliability
+fit <- verify_fit(fit)                   # independent runs, more effort, wider bounds
+reliability(fit)                         # report only when no check fails
 ```
 
-In the app you can:
+Or, without writing code:
 
-1. Upload your dataset (CSV): one row per trial with species, host density and number of parasitised hosts.
-2. Select the columns, the experiment duration *T* and the grid of *z*.
-3. Run the analysis: parameters, likelihood profile of *z* with its 95% interval, AIC (free *z* vs *z* = 1), stochastic curves and distributions.
-4. Review the **Diagnostics** and **Data screening** tabs, and download an HTML report.
+```r
+funresMech::run_app()
+```
 
-For reproducible results call `set.seed()` before `run_app()`; the likelihood profile is computed in parallel and gives the same result as a sequential run with the same seed.
+## Choosing the computational effort
 
-## Features
+The likelihood is approximated by simulation, so fits take minutes to hours.
+Three presets are available in `funres_control()`:
 
-- **Mechanistic simulation:** search times follow a Gamma distribution; handling times follow a Lognormal distribution with mean `h` and standard deviation `s` (natural scale, as in Okuyama 2026). The engine is written in C++ ('Rcpp').
-- **Simulated likelihood:** the probability distribution of parasitism is generated through repeated simulations.
-- **Flexible density scaling:** the exponent *z* allows Type I, II and III-like responses.
-- **Uncertainty:** 95% interval of *z* from the likelihood profile (likelihood-ratio threshold of 1.92 log-likelihood units), with automatic extension and refinement of the grid when a limit is open.
-- **Diagnostics and screening of atypical trials** (data are never removed).
-- **Interactive visualisation** with 'plotly' and **reports** in HTML.
+| Preset | Simulations per density | Generations | Use |
+|---|---|---|---|
+| `exploratory` | 2,000 | 50 | First look at the data. Not for reporting. |
+| `standard` (default) | 5,000 | 100 | Results to be reported, after `verify_fit()`. |
+| `final` | 10,000 | 200 | Highest precision. |
 
-## What is new in 1.1.0
+As a guide, with about 60 trials at 8 to 13 densities and the profile
+evaluated in parallel on 8 processor cores, an exploratory fit takes tens of
+minutes, a standard fit about one to two hours and a final fit several hours.
+Use `future::plan(future::multisession)` before `fit_funres()` to evaluate the
+profile in parallel.
 
-Version 1.1.0 replaces the computational core and changes some results with
-respect to 1.0.4 (scale of `s`, threshold of the interval, search on the log
-scale). See [NEWS.md](NEWS.md) for the details.
+## How reliable are the results?
+
+The estimation procedure was validated by simulation. In 288 fits to 216
+datasets with known parameters (three values of *z*, three levels of search
+variability and designs with 5, 8 and 13 host densities), the estimates of *z*
+and *h* were unbiased, and the 95% interval of *z* contained the true value in
+91% of the fits (95% confidence interval 87% to 94%). The interval is
+therefore slightly narrower than nominal, mostly when search times are highly
+variable, and its coverage reached 94% with 13 host densities. With the
+standard preset, the checks in `reliability()` gave false alarms in at most 6%
+of the fits. Further simulations examined misspecified models, optimizers and
+computational budgets. See the
+vignette *How reliable is my fit?* and the `validation/` folder of the
+repository for the scripts and results.
 
 ## Documentation
 
-```r
-help(package = "funresMech")
-?funresMech
-?run_app
-```
+* `vignette("funresMech")`: getting started.
+* `vignette("reliability", package = "funresMech")`: how reliable is my fit?
+* `vignette("process-and-distributions", package = "funresMech")`: parasitoid
+  or predator process, and the distributions of search and handling times.
+* `vignette("units-and-bounds", package = "funresMech")`: time units, search
+  bounds and open intervals.
 
 ## Citation
 
-If you use funresMech in your research, please cite:
-
-```bibtex
-@article{NunezCampero2026,
-  author = {Segundo Núñez-Campero},
-  title = {funresMech: Mechanistic Functional Response Analysis using the Okuyama Model},
-  year = {2026},
-  note = {R package version 1.1.0},
-  url = {https://github.com/Segon03/funresMech}
-}
-
-@article{Okuyama2012,
-  author = {Okuyama, Toshinori},
-  title = {A likelihood approach for functional response models},
-  journal = {Biological Control},
-  volume = {60},
-  number = {2},
-  pages = {103--107},
-  year = {2012},
-  doi = {10.1016/j.biocontrol.2011.10.008}
-}
-
-@article{Okuyama2026,
-  author = {Okuyama, Toshinori},
-  title = {Parametric Assumptions in Parasitoid Functional Response Analysis},
-  journal = {Journal of Applied Entomology},
-  year = {2026},
-  doi = {10.1111/jen.70148}
-}
+```r
+citation("funresMech")
 ```
+
+Please cite the package and the method:
+
+* Núñez-Campero S. funresMech: mechanistic functional response analysis
+  with simulation-based likelihood. R package version 1.2.0.
+  doi: 10.32614/CRAN.package.funresMech
+* Okuyama T (2012). A likelihood approach for functional response models.
+  *Biological Control* 60: 103–107. doi: 10.1016/j.biocontrol.2011.10.008
+* Okuyama T (2026). Parametric assumptions in parasitoid functional response
+  analysis. *Journal of Applied Entomology*. doi: 10.1111/jen.70148
+
+## Support
+
+Questions, bug reports and feature requests:
+<https://github.com/Segon03/funresMech/issues>.
 
 ## License
 
-MIT License (see the `LICENSE` file). Copyright holder: Segundo Núñez-Campero.
-
-## Contributing
-
-Contributions are welcome. Please submit issues, feature requests or pull requests on GitHub.
-
-## References
-
-Okuyama, T. (2012). A likelihood approach for functional response models. *Biological Control*, 60(2), 103-107.
-
-Okuyama, T. (2026). Parametric Assumptions in Parasitoid Functional Response Analysis. *Journal of Applied Entomology*.
-
-## Validation materials
-
-The scripts, data, results and figures used to validate version 1.1.0 (engine equivalence,
-parameter recovery, reproduction of Okuyama 2026 on real data) are in [`validation/`](validation/).
-They are not part of the installed package.
+MIT © Segundo Núñez-Campero
