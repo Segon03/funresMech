@@ -21,7 +21,7 @@
 # ============================================================================
 
 library(funresMech)
-stopifnot(packageVersion("funresMech") >= "1.2.0")
+stopifnot(packageVersion("funresMech") >= "1.1.0.9000")
 dir.create(file.path("validation", "tables"), showWarnings = FALSE, recursive = TRUE)
 
 d3 <- read.csv(file.path("validation", "data", "D3.csv"))

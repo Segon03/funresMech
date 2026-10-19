@@ -4,7 +4,7 @@ bibentry(
   title   = "funresMech: Mechanistic Functional Response Analysis with Simulation-Based Likelihood",
   author  = person("Segundo", "Núñez-Campero"),
   year    = "2026",
-  note    = "R package version 1.2.0",
+  note    = paste("R package version", meta$Version),
   doi     = "10.32614/CRAN.package.funresMech",
   url     = "https://CRAN.R-project.org/package=funresMech"
 )

@@ -9,7 +9,7 @@
 #   source("validation/R/20_figures_and_tables.R")
 # or from the folder of the submission that contains Tables/ and Figures/:
 #   Rscript Scripts/20_figures_and_tables.R
-# Requires: ggplot2 (>= 3.4.0), funresMech (>= 1.2.0, only for the
+# Requires: ggplot2 (>= 3.4.0), funresMech (>= 1.1.0.9000, only for the
 # interpolation of the profile interval in S2 Fig).
 # ============================================================================
 

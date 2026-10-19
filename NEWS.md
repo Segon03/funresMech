@@ -1,4 +1,9 @@
-# funresMech 1.2.0
+# funresMech 1.1.0.9000
+
+Development version of the forthcoming release 1.2.0, available on the GitHub
+branch `dev-frMech-1.1.0.9000`. It has not been submitted to CRAN or archived
+in Zenodo; the current release on CRAN is 1.1.0. The changes below will be
+released as version 1.2.0.
 
 This version turns the package into a general tool for simulation-based
 likelihood analysis of functional responses. The foraging process can now be

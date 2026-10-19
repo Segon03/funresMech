@@ -31,7 +31,7 @@
 
 library(funresMech)
 library(future)
-stopifnot(packageVersion("funresMech") >= "1.2.0")
+stopifnot(packageVersion("funresMech") >= "1.1.0.9000")
 for (p in c("cmaes", "nloptr")) if (!requireNamespace(p, quietly = TRUE)) stop("Install package ", p)
 
 if (!exists("QUICK")) QUICK <- FALSE

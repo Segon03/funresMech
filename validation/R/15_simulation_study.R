@@ -27,7 +27,7 @@
 # ============================================================================
 
 library(funresMech)
-stopifnot(packageVersion("funresMech") >= "1.2.0")
+stopifnot(packageVersion("funresMech") >= "1.1.0.9000")
 source(file.path("validation", "R", "helpers.R"))
 
 if (!exists("QUICK")) QUICK <- FALSE

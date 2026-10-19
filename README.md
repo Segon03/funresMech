@@ -5,6 +5,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
+> **Development version (1.1.0.9000).** This branch contains the development
+> version of the forthcoming release 1.2.0. It has not been submitted to CRAN
+> or archived in Zenodo; the current release on CRAN is 1.1.0.
+
 **funresMech** fits mechanistic functional response models to experimental
 counts of hosts parasitized or prey consumed. Instead of assuming a binomial or
 beta-binomial distribution for the counts, it obtains their probability
@@ -46,8 +50,8 @@ be trusted and what to do if it cannot.
 ## Installation
 
 ```r
-install.packages("funresMech")            # release on CRAN
-pak::pkg_install("Segon03/funresMech")    # development version on GitHub
+install.packages("funresMech")                                   # release on CRAN (1.1.0)
+pak::pkg_install("Segon03/funresMech@dev-frMech-1.1.0.9000")     # development version
 ```
 
 Installing from source requires a C++ compiler (Rtools on Windows, Xcode
@@ -128,7 +132,8 @@ citation("funresMech")
 Please cite the package and the method:
 
 * Núñez-Campero S. funresMech: mechanistic functional response analysis
-  with simulation-based likelihood. R package version 1.2.0.
+  with simulation-based likelihood. R package version 1.1.0.9000
+  (development version of 1.2.0).
   doi: 10.32614/CRAN.package.funresMech
 * Okuyama T (2012). A likelihood approach for functional response models.
   *Biological Control* 60: 103–107. doi: 10.1016/j.biocontrol.2011.10.008
