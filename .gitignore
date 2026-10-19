@@ -28,3 +28,6 @@ validation/tablas/*_rapido.csv
 validation/results/fase5/
 validation/results/fase5b/
 validation/results/fase5b_rapido/
+validation/results/proceso/
+validation/results/proceso_rapido/
+validation/tablas/proceso_*_rapido.csv
