@@ -5,29 +5,24 @@
 .RData
 .Ruserdata
 
-# Compiled code (se genera al instalar)
+# Compiled code (created when the package is installed)
 src/*.o
 src/*.so
 src/*.dll
 
-# Salidas de build y check
+# Build and check outputs
 *.Rcheck/
 funresMech_*.tar.gz
 
-# Archivos de desarrollo local (rutas locales, scripts de prueba, contexto de trabajo)
+# Local development files
 dev/
 CLAUDE.md
 
-# Sistema
+# System files
 .DS_Store
 Thumbs.db
 
-# Salidas de prueba (modo RAPIDO) de la validación
-validation/results/*_rapido/
-validation/tablas/*_rapido.csv
-validation/results/fase5/
-validation/results/fase5b/
-validation/results/fase5b_rapido/
-validation/results/proceso/
-validation/results/proceso_rapido/
-validation/tablas/proceso_*_rapido.csv
+# Outputs of the validation runs (one file per fit; large) and of quick checks
+validation/results/
+validation/tables/*_quick.csv
+validation/data_raw/
