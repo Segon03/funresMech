@@ -5,10 +5,10 @@
 # database, version 5 (Uiterwaal et al. 2022, Ecology 103: e3706). They are
 # the second- and third-instar panels of the first figure of Kishani Farahani
 # and Goldansaz (2013, Eur J Entomol 110: 277-283): Apanteles myeloenta
-# attacking Ectomyelois ceratoniae for 24 h. The curves were digitized point
-# by point from the published figure, so trials with the same count overlap
-# and mostly the distinct values at each density are present (S1 Text,
-# section 11).
+# attacking Ectomyelois ceratoniae for 24 h. According to the database
+# metadata, its compilers digitized these curves point by point from the
+# published figure, in which trials with the same count overlap, so mostly the
+# distinct values at each density are present (S1 Text, section 11).
 #
 # Requires validation/data_raw/FoRAGE_db_V5_Dec_20_2024_original_curves.csv,
 # which is not redistributed; obtain it from the FoRAGE data paper.
