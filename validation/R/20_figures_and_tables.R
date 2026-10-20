@@ -9,7 +9,7 @@
 #   source("validation/R/20_figures_and_tables.R")
 # or from the folder of the submission that contains Tables/ and Figures/:
 #   Rscript Scripts/20_figures_and_tables.R
-# Requires: ggplot2 (>= 3.4.0), funresMech (>= 1.1.0.9000, only for the
+# Requires: ggplot2 (>= 3.4.0), funresMech (>= 1.2.0, only for the
 # interpolation of the profile interval in S2 Fig).
 # ============================================================================
 
@@ -125,7 +125,7 @@ g2a <- ggplot(cov, aes(factor(z), coverage, colour = arm)) +
   geom_pointrange(aes(ymin = lower, ymax = upper), position = position_dodge(0.5), size = 0.3) +
   scale_colour_manual(values = arm_cols, labels = arm_labels, name = NULL) +
   scale_y_continuous("Coverage of the 95% interval of z", limits = c(0.5, 1)) +
-  labs(x = "True z", title = "A. Interval coverage") +
+  labs(x = "True z", title = "B. Interval coverage") +
   guides(colour = guide_legend(ncol = 1)) +
   theme(plot.title = element_text(size = 9, face = "bold"))
 G$k_lab <- factor(paste("k =", G$k), paste("k =", c(0.2, 1, 5)))
@@ -134,10 +134,10 @@ g2b <- ggplot(G, aes(true_z, z_hat)) +
   geom_point(data = unique(G[, c("true_z", "z", "k_lab")]), aes(true_z, z), shape = 4, colour = "red3",
              size = 2) +
   facet_wrap(~k_lab) +
-  labs(x = "True z", y = "Estimated z", title = "B. Estimates of z (all 288 fits)") +
+  labs(x = "True z", y = "Estimated z", title = "A. Estimates of z (all 288 fits)") +
   theme(plot.title = element_text(size = 9, face = "bold"))
-g2 <- if (requireNamespace("patchwork", quietly = TRUE)) patchwork::wrap_plots(g2a, g2b, widths = c(1, 1.4)) else
-  gridExtra::arrangeGrob(g2a, g2b, ncol = 2, widths = c(1, 1.4))
+g2 <- if (requireNamespace("patchwork", quietly = TRUE)) patchwork::wrap_plots(g2b, g2a, widths = c(1.4, 1)) else
+  gridExtra::arrangeGrob(g2b, g2a, ncol = 2, widths = c(1.4, 1))
 save_fig(g2, "Fig2", 7.0, 3.6)
 
 t1 <- do.call(rbind, lapply(split(G, list(G$arm, G$z), drop = TRUE), function(q) {
