@@ -17,6 +17,7 @@ is excluded from the package tarball through `.Rbuildignore`).
 | `R/15_simulation_study.R` | Simulation study: 216 datasets, 288 fits, three designs, two presets | section 7 |
 | `R/16_simulation_study_analysis.R` | Tests and additional analyses of the simulation study | section 7 |
 | `R/17_parasitoid_vs_predator.R` | Parasitoid and predator processes in D2 and D3 | section 11 |
+| `R/18_extended_range.R` | Simulation study outside the base scenario: s/h = 1.5, h/T = 0.1 and E = 5; 216 fits | section 7 |
 | `R/20_figures_and_tables.R` | Figures 1 to 3, S1 and S2 Figs, and the summary tables | all |
 | `R/helpers.R` | Shared definitions: designs, scenarios, simulation of datasets, seeds | |
 
@@ -39,6 +40,7 @@ source("validation/R/02_engine_tests.R")                          # a few minute
 QUICK <- TRUE; source("validation/R/15_simulation_study.R")       # quick check of the installation
 rm(list = ls()); source("validation/R/15_simulation_study.R")     # complete run (about one day on 23 cores)
 source("validation/R/16_simulation_study_analysis.R")
+rm(list = ls()); source("validation/R/18_extended_range.R")      # complete run (about 9 h on 23 cores)
 source("validation/R/20_figures_and_tables.R")
 ```
 

@@ -3,7 +3,7 @@
 #
 # Shared definitions of the validation scripts of funresMech 1.2.0: designs,
 # scenarios, true parameters, simulation of datasets, seeds, and summaries of
-# fits. Sourced by 11, 12, 15 and 17. Run all scripts from the root of the
+# fits. Sourced by 11, 12, 15, 17 and 18. Run all scripts from the root of the
 # package repository.
 #
 # Seeds. Every simulated dataset and every fit uses a fixed seed, read from
