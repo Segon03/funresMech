@@ -80,6 +80,12 @@ reproduces version 1.1.0 exactly with the same random seed.
   trials. Data are never removed.
 * New `simulate_response()`: simulated experiments under any model.
 
+## Figures
+
+* New `plot()` method for fits: the profile of z, the fitted response with the
+  central 95% of simulated trials, and the predicted distribution of the
+  counts at each density with the observed counts.
+
 ## Interactive application
 
 * Model specification panel (distributions, user samplers with a test
