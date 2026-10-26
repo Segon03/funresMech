@@ -2,6 +2,7 @@
 
 S3method(coef,funres_fit)
 S3method(logLik,funres_fit)
+S3method(plot,funres_fit)
 S3method(print,funres_control)
 S3method(print,funres_fit)
 S3method(print,funres_model)

@@ -17,8 +17,9 @@ NULL
 # (same units as h), as in Okuyama (2026); s = 0 gives a fixed handling
 # time. The Lognormal has mean h and sd s, i.e.
 # sdlog = sqrt(log(1 + (s / h)^2)).
+# exclude = TRUE does not count a host whose handling ends after T.
 
-simulate_trial <- function(x, T, a, h, z, k, s) {
+simulate_trial <- function(x, T, a, h, z, k, s, exclude = FALSE) {
   if (x < 1) return(0L)
 
   tocado <- logical(x)
@@ -35,9 +36,9 @@ simulate_trial <- function(x, T, a, h, z, k, s) {
     if (t > T) break
 
     host_id <- floor(runif(1, 0, x)) + 1
-    tocado[host_id] <- TRUE
-
     th <- if (s > 0) rlnorm(1, meanlog = meanlog, sdlog = sdlog) else h
+    if (exclude && t + th > T) break
+    tocado[host_id] <- TRUE
     t <- t + th
   }
 

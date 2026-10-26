@@ -74,6 +74,28 @@ funres_model(process = "parasitoid")
 funres_model(process = "predator")
 ```
 
+## A host or prey still being handled at the end of the trial
+
+When the trial ends, the consumer may still be handling the last host or prey
+it found. By default (`unfinished = "include"`) the attack counts as soon as
+the host or prey is encountered, even if its handling would end after *T*.
+This is the convention of Okuyama (2026), who assumed that parasitism was
+successful even if the trial ended while the parasitoid was still handling a
+host. With `unfinished = "exclude"`, an attack counts only if its handling
+ends by *T*. In the parasitoid process, a host that had already been attacked
+earlier in the trial stays counted.
+
+Choose the convention that matches how the trials were scored. For example,
+`"exclude"` fits a design in which a host is counted as parasitized only after
+oviposition is complete. The difference between the two conventions grows
+with the ratio *h*/*T*: it is negligible when handling is short compared with
+the trial and can be large when it is not. Both models have the same
+parameters, so they can be fitted to the same data and compared by AIC.
+
+```{r unfinished}
+funres_model(unfinished = "exclude")
+```
+
 ## Distributions of search times
 
 All built-in families have mean search time 1/(a *x*^*z*). Their dispersion

@@ -147,6 +147,7 @@ server <- function(input, output, session) {
 
   opts <- reactive({
     list(search = input$search, handling = input$handling, process = input$process,
+         unfinished = if (is.null(input$unfinished)) "include" else input$unfinished,
          search_code = input$search_code, search_lower = input$search_lower, search_upper = input$search_upper,
          handling_code = input$handling_code, handling_lower = input$handling_lower,
          handling_upper = input$handling_upper,
@@ -196,6 +197,7 @@ server <- function(input, output, session) {
       tags$table(class = "table table-sm",
         tags$tbody(
           tags$tr(tags$th("Process"), tags$td(if (m$process == "parasitoid") "Parasitoid: hosts not removed, distinct hosts counted" else "Predator: consumed prey removed")),
+          tags$tr(tags$th("End of trial"), tags$td(if (.excludes_unfinished(m)) "Host or prey still in handling at T not counted" else "Host or prey still in handling at T counted")),
           tags$tr(tags$th("Search times"), tags$td(paste0(m$search$name, ", mean 1/(a x^z)"))),
           tags$tr(tags$th("Handling times"), tags$td(paste0(m$handling$name, ", mean h"))),
           tags$tr(tags$th("Free parameters"), tags$td(paste(free, collapse = ", "))),

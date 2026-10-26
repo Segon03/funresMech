@@ -18,6 +18,8 @@ is excluded from the package tarball through `.Rbuildignore`).
 | `R/16_simulation_study_analysis.R` | Tests and additional analyses of the simulation study | section 7 |
 | `R/17_parasitoid_vs_predator.R` | Parasitoid and predator processes in D2 and D3 | section 11 |
 | `R/18_extended_range.R` | Simulation study outside the base scenario: s/h = 1.5, h/T = 0.1 and E = 5; 216 fits | section 7 |
+| `R/19_phenomenological_data.R` | Fits to data drawn from binomial and beta-binomial distributions around a fixed mean functional response; 48 fits | (pending) |
+| `R/21_worked_example_D3.R` | Worked example: complete analysis of D3, saving every printed output and the figures to `worked_example/` | (pending) |
 | `R/20_figures_and_tables.R` | Figures 1 to 3, S1 and S2 Figs, and the summary tables | all |
 | `R/helpers.R` | Shared definitions: designs, scenarios, simulation of datasets, seeds | |
 
@@ -41,6 +43,8 @@ QUICK <- TRUE; source("validation/R/15_simulation_study.R")       # quick check 
 rm(list = ls()); source("validation/R/15_simulation_study.R")     # complete run (about one day on 23 cores)
 source("validation/R/16_simulation_study_analysis.R")
 rm(list = ls()); source("validation/R/18_extended_range.R")      # complete run (about 9 h on 23 cores)
+rm(list = ls()); source("validation/R/19_phenomenological_data.R")  # complete run (about 2 to 3 h on 23 cores)
+rm(list = ls()); source("validation/R/21_worked_example_D3.R")    # complete run (a few hours)
 source("validation/R/20_figures_and_tables.R")
 ```
 

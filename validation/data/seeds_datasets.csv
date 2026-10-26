@@ -65,3 +65,9 @@
 "correct_z1_k5_sh0.5_hT0.025_E5_large",3312
 "correct_z1.75_k5_sh0.5_hT0.025_E5_large",3466
 "correct_z2.75_k5_sh0.5_hT0.025_E5_large",3467
+"phenomenological_binomial_z1_rho0_hT0.025_E20_large",14784
+"phenomenological_binomial_z2_rho0_hT0.025_E20_large",14785
+"phenomenological_betabinomial_z1_rho0.1_hT0.025_E20_large",15291
+"phenomenological_betabinomial_z2_rho0.1_hT0.025_E20_large",15292
+"phenomenological_betabinomial_z1_rho0.3_hT0.025_E20_large",15293
+"phenomenological_betabinomial_z2_rho0.3_hT0.025_E20_large",15294

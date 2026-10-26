@@ -8,7 +8,8 @@ funres_model(
   search = "gamma",
   handling = "lognormal",
   process = c("parasitoid", "predator"),
-  fix = list()
+  fix = list(),
+  unfinished = c("include", "exclude")
 )
 }
 \arguments{
@@ -22,6 +23,10 @@ funres_model(
 
 \item{fix}{Named list of parameters held fixed, among \code{k}, \code{s} and \code{z}
 (for example \code{list(z = 1)} for a type II response).}
+
+\item{unfinished}{\code{"include"} (default) or \code{"exclude"}: whether a host or
+prey still being handled at the end of the trial counts in the response
+(see Details).}
 }
 \value{
 An object of class \code{funres_model}.
@@ -60,6 +65,17 @@ discrimination), which neither process represents exactly. The process
 can change the estimate of \code{z}, so when it is uncertain fit both and
 compare them by AIC (they have the same number of parameters).
 
+\strong{End of the trial.} A host or prey may still be in handling when the
+trial ends. With \code{unfinished = "include"} (default) the attack counts as
+soon as the host or prey is encountered, as in Okuyama (2026), who assumed
+that parasitism was successful even if the trial ended during handling.
+With \code{"exclude"} an attack counts only if its handling ends by \code{T}, so a
+host or prey still being handled at the end is not counted (in the
+parasitoid process, a host already attacked earlier stays counted). Choose
+the convention that matches how the trials were scored; for example,
+\code{"exclude"} when a host counts as parasitized only after oviposition is
+complete.
+
 The distributions are assumptions of the analysis. No family is correct by
 default; when the biology of the system suggests another distribution,
 specify it here (built-in alternatives or \code{\link[=funres_sampler]{funres_sampler()}}) and compare
@@ -70,6 +86,7 @@ funres_model()                                   # default: Gamma search, lognor
 funres_model(search = "exponential", handling = "constant")
 funres_model(search = "weibull", handling = "gamma", process = "predator")
 funres_model(fix = list(z = 1))                  # type II response
+funres_model(unfinished = "exclude")             # attacks count only if handling ends by T
 }
 \references{
 Okuyama, T. (2012). Biological Control 60: 103-107.

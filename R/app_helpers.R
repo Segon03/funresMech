@@ -58,7 +58,8 @@ NULL
   if (isTRUE(o$fix_k) && !identical(o$search, "exponential")) fix$k <- o$k_value
   if (isTRUE(o$fix_s) && !identical(o$handling, "constant")) fix$s <- o$s_value
   if (identical(o$z_mode, "fixed")) fix$z <- o$z_value
-  funres_model(search = search, handling = handling, process = o$process, fix = fix)
+  funres_model(search = search, handling = handling, process = o$process, fix = fix,
+               unfinished = if (is.null(o$unfinished)) "include" else o$unfinished)
 }
 
 .app_bounds <- function(o) {
@@ -168,6 +169,7 @@ NULL
   rel <- reliability(fit)
   data.frame(
     Label = label, Species = species, Process = m$process,
+    `End of trial` = if (.excludes_unfinished(m)) "exclude" else "include",
     Search = m$search$name, Handling = m$handling$name,
     Fixed = if (length(m$fix)) paste(names(m$fix), unlist(m$fix), sep = " = ", collapse = ", ") else "none",
     `Free parameters` = fit$n_par, NLL = round(fit$nll, 3), AIC = round(fit$aic$AIC_full, 2),
@@ -310,8 +312,9 @@ theme_void_like <- function() {
         sprintf("dat <- dat[!dat$row %%in%% %s, ]", dq(as.integer(excluded_rows)))),
     "",
     model_lines("search"), model_lines("handling"),
-    sprintf("model <- funres_model(search = search, handling = handling, process = %s%s)",
-            dq(o$process), if (length(fix)) paste0(", fix = list(", paste(fix, collapse = ", "), ")") else ""),
+    sprintf("model <- funres_model(search = search, handling = handling, process = %s%s%s)",
+            dq(o$process), if (length(fix)) paste0(", fix = list(", paste(fix, collapse = ", "), ")") else "",
+            if (identical(o$unfinished, "exclude")) ', unfinished = "exclude"' else ""),
     sprintf("control <- funres_control(%s, n_sim = %d, itermax = %d, NP = %d, n_reeval = %d, method = %s%s%s%s%s)",
             dq(o$preset), as.integer(o$n_sim), as.integer(o$itermax), as.integer(o$NP),
             as.integer(o$n_reeval), dq(o$method),

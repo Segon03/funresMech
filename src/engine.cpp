@@ -17,6 +17,14 @@
 //                        (natural scale); s = 0 gives a fixed handling time;
 //   * the trial ends when the elapsed time exceeds T.
 //
+// End of the trial: by default an attack counts as soon as the host or prey is
+// encountered, even if its handling would end after T (Okuyama 2026: "it was
+// assumed that parasitism was successful even if the trial ended while the
+// parasitoid was still handling a host"). With exclude_unfinished = true the
+// host or prey still being handled at T is not counted: the handling time is
+// drawn at the encounter and the attack counts only if handling ends by T.
+// The default convention keeps the random-number order of version 1.1.0.
+//
 // Families (codes used by the R layer, see R/model_spec.R):
 //   search:   0 Gamma (shape k), 1 Lognormal, 2 Weibull,
 //             9 user R function, 10 user C++ function (external pointer).
@@ -232,7 +240,8 @@ static IntegerVector engine(int H, double a, double h, double z, double k,
                             bool predator, bool cut,
                             SEXP search_fun, SEXP handling_fun,
                             double* n_loops = NULL, double max_loops = 1e9,
-                            bool force_general = false) {
+                            bool force_general = false,
+                            bool exclude_unfinished = false) {
     if (H < 1) stop("H must be >= 1");
     if (nsim < 1) stop("nsim must be >= 1");
     check_par(a, h, z, k, s, T);
@@ -244,7 +253,7 @@ static IntegerVector engine(int H, double a, double h, double z, double k,
     // dispatch per event. Same random numbers, in the same order, as the
     // general loop below.
     if (search_family == S_GAMMA && (handling_family == HD_LNORM || s == 0) &&
-        !predator && n_loops == NULL && !force_general) {
+        !predator && n_loops == NULL && !force_general && !exclude_unfinished) {
         const double rate = k * a * R_pow((double) H, z);
         const double gscale = 1.0 / rate;
         const bool fixed = (s == 0);
@@ -288,19 +297,25 @@ static IntegerVector engine(int H, double a, double h, double z, double k,
             t += search.draw(predator ? H - count : H);
             if (t > T) break;
 
-            if (predator) {
-                ++count;
-            } else {
-                int pid = (int) std::floor(R::runif(0, H));
-                if (!attacked[pid]) { attacked[pid] = 1; ++count; }
-            }
+            int pid = predator ? -1 : (int) std::floor(R::runif(0, H));
             if (n_loops != NULL) {
                 loops += 1;
                 if (loops >= max_loops) { *n_loops = R_PosInf; return out; }
             }
+            if (exclude_unfinished) {
+                // the attack counts only if its handling ends by T; otherwise
+                // the trial ends with this host or prey still being handled
+                t += handling.draw();
+                if (t > T) break;
+            }
+            if (predator) {
+                ++count;
+            } else if (!attacked[pid]) {
+                attacked[pid] = 1; ++count;
+            }
             if ((predator || cut) && count == H) break;
 
-            t += handling.draw();
+            if (!exclude_unfinished) t += handling.draw();
         }
 
         out[sim] = count;
@@ -337,10 +352,11 @@ IntegerVector sim_trials_cpp(int H, double a, double h, double z, double k,
                              bool predator = false, bool cut = true,
                              SEXP search_fun = R_NilValue,
                              SEXP handling_fun = R_NilValue,
-                             bool force_general = false) {
+                             bool force_general = false,
+                             bool exclude_unfinished = false) {
     return engine(H, a, h, z, k, s, T, nsim, search_family, handling_family,
                   predator, cut, search_fun, handling_fun, NULL, 1e9,
-                  force_general);
+                  force_general, exclude_unfinished);
 }
 
 // Engine of version 1.1.0 (Gamma search, Lognormal handling, parasitoid),

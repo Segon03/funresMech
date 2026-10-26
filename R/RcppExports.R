@@ -5,8 +5,8 @@ draw_times_cpp <- function(n, search, family, mean, disp, fun = NULL) {
     .Call(`_funresMech_draw_times_cpp`, n, search, family, mean, disp, fun)
 }
 
-sim_trials_cpp <- function(H, a, h, z, k, s, T, nsim, search_family = 0L, handling_family = 0L, predator = FALSE, cut = TRUE, search_fun = NULL, handling_fun = NULL, force_general = FALSE) {
-    .Call(`_funresMech_sim_trials_cpp`, H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general)
+sim_trials_cpp <- function(H, a, h, z, k, s, T, nsim, search_family = 0L, handling_family = 0L, predator = FALSE, cut = TRUE, search_fun = NULL, handling_fun = NULL, force_general = FALSE, exclude_unfinished = FALSE) {
+    .Call(`_funresMech_sim_trials_cpp`, H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general, exclude_unfinished)
 }
 
 sim_engine_cpp <- function(H, a, h, z, k, s, T, nsim, stop_saturated = TRUE) {

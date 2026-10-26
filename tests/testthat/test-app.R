@@ -106,7 +106,7 @@ test_that("figures and tables of the application build for a fit", {
   expect_equal(nrow(funresMech:::.estimates_table(f)), 5)
   expect_match(funresMech:::.estimates_table(f)$Meaning[1], "per hour\\)")
   expect_true(nrow(funresMech:::.aic_table(f)) >= 1)
-  expect_equal(ncol(funresMech:::.comparison_row(f, "m", "D3")), 12)
+  expect_equal(ncol(funresMech:::.comparison_row(f, "m", "D3")), 13)
   expect_equal(funresMech:::.format_duration(30), "30 s")
   expect_equal(funresMech:::.format_duration(600), "10 min")
 })

@@ -26,6 +26,12 @@ reproduces version 1.1.0 exactly with the same random seed.
 * New `process = "predator"`: attacked prey are removed. For a parasitoid,
   this represents perfect and cost-free discrimination of parasitized hosts.
   The default `process = "parasitoid"` keeps attacked hosts available.
+* New `unfinished` argument of `funres_model()`: whether a host or prey
+  still being handled when the trial ends counts in the response. The
+  default, `"include"`, counts the attack at the encounter, as in Okuyama
+  (2026) and in earlier versions; `"exclude"` counts it only if handling ends
+  by T. The option is available in the interface, the exported script and the
+  report.
 * Parameters `k`, `s` and `z` can be held fixed (`fix = list(...)`); the
   number of free parameters is propagated to the AIC.
 

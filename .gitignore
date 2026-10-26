@@ -26,3 +26,4 @@ Thumbs.db
 validation/results/
 validation/tables/*_quick.csv
 validation/data_raw/
+validation/worked_example_quick/

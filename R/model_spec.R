@@ -134,6 +134,17 @@ print.funres_sampler <- function(x, ...) {
 #' can change the estimate of `z`, so when it is uncertain fit both and
 #' compare them by AIC (they have the same number of parameters).
 #'
+#' **End of the trial.** A host or prey may still be in handling when the
+#' trial ends. With `unfinished = "include"` (default) the attack counts as
+#' soon as the host or prey is encountered, as in Okuyama (2026), who assumed
+#' that parasitism was successful even if the trial ended during handling.
+#' With `"exclude"` an attack counts only if its handling ends by `T`, so a
+#' host or prey still being handled at the end is not counted (in the
+#' parasitoid process, a host already attacked earlier stays counted). Choose
+#' the convention that matches how the trials were scored; for example,
+#' `"exclude"` when a host counts as parasitized only after oviposition is
+#' complete.
+#'
 #' The distributions are assumptions of the analysis. No family is correct by
 #' default; when the biology of the system suggests another distribution,
 #' specify it here (built-in alternatives or [funres_sampler()]) and compare
@@ -144,6 +155,9 @@ print.funres_sampler <- function(x, ...) {
 #' @param handling Distribution of handling times: `"lognormal"` (default),
 #'   `"gamma"`, `"weibull"`, `"constant"` or a [funres_sampler()].
 #' @param process `"parasitoid"` (default) or `"predator"`.
+#' @param unfinished `"include"` (default) or `"exclude"`: whether a host or
+#'   prey still being handled at the end of the trial counts in the response
+#'   (see Details).
 #' @param fix Named list of parameters held fixed, among `k`, `s` and `z`
 #'   (for example `list(z = 1)` for a type II response).
 #' @return An object of class `funres_model`.
@@ -158,10 +172,13 @@ print.funres_sampler <- function(x, ...) {
 #' funres_model(search = "exponential", handling = "constant")
 #' funres_model(search = "weibull", handling = "gamma", process = "predator")
 #' funres_model(fix = list(z = 1))                  # type II response
+#' funres_model(unfinished = "exclude")             # attacks count only if handling ends by T
 #' @export
 funres_model <- function(search = "gamma", handling = "lognormal",
-                         process = c("parasitoid", "predator"), fix = list()) {
+                         process = c("parasitoid", "predator"), fix = list(),
+                         unfinished = c("include", "exclude")) {
   process <- match.arg(process)
+  unfinished <- match.arg(unfinished)
   if (!is.list(fix) || (length(fix) && is.null(names(fix))))
     stop("'fix' must be a named list, e.g. list(k = 1).", call. = FALSE)
   bad <- setdiff(names(fix), c("k", "s", "z"))
@@ -209,6 +226,7 @@ funres_model <- function(search = "gamma", handling = "lognormal",
   }
 
   structure(list(search = s_spec, handling = h_spec, process = process,
+                 unfinished = unfinished,
                  fix = fix[c("k", "s", "z")[c("k", "s", "z") %in% names(fix)]]),
             class = "funres_model")
 }
@@ -225,6 +243,9 @@ print.funres_model <- function(x, ...) {
       if (!x$search$user) ", CV^2 = 1/k" else ", shape k", "\n", sep = "")
   cat("  Handling times: ", x$handling$name, ", mean h",
       if (!x$handling$user) ", SD s" else ", shape s", "\n", sep = "")
+  cat("  End of trial:   ", if (.excludes_unfinished(x))
+        "a host or prey still in handling at T is not counted"
+      else "a host or prey still in handling at T is counted", "\n", sep = "")
   cat("  Free parameters: ", paste(free, collapse = ", "),
       if (length(fx)) paste0("; fixed: ",
                              paste(names(fx), unlist(fx), sep = " = ", collapse = ", ")),
@@ -235,6 +256,10 @@ print.funres_model <- function(x, ...) {
 # Default model (Okuyama 2026)
 .default_model <- function() funres_model()
 
+# TRUE when attacks whose handling ends after T are not counted (models created
+# before this option existed have no 'unfinished' element: they include them)
+.excludes_unfinished <- function(model) identical(model$unfinished, "exclude")
+
 # Number of free parameters (z counted unless fixed)
 .n_free <- function(model) 5L - length(model$fix)
 
@@ -243,7 +268,8 @@ print.funres_model <- function(x, ...) {
   sim_trials_cpp(as.integer(x), a, h, z, k, s, T, as.integer(n_sim),
                  model$search$code, model$handling$code,
                  model$process == "predator", cut,
-                 model$search$fun, model$handling$fun)
+                 model$search$fun, model$handling$fun, FALSE,
+                 .excludes_unfinished(model))
 }
 
 #' Simulate functional response trials

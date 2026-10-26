@@ -27,8 +27,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // sim_trials_cpp
-IntegerVector sim_trials_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, int search_family, int handling_family, bool predator, bool cut, SEXP search_fun, SEXP handling_fun, bool force_general);
-RcppExport SEXP _funresMech_sim_trials_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP search_familySEXP, SEXP handling_familySEXP, SEXP predatorSEXP, SEXP cutSEXP, SEXP search_funSEXP, SEXP handling_funSEXP, SEXP force_generalSEXP) {
+IntegerVector sim_trials_cpp(int H, double a, double h, double z, double k, double s, double T, int nsim, int search_family, int handling_family, bool predator, bool cut, SEXP search_fun, SEXP handling_fun, bool force_general, bool exclude_unfinished);
+RcppExport SEXP _funresMech_sim_trials_cpp(SEXP HSEXP, SEXP aSEXP, SEXP hSEXP, SEXP zSEXP, SEXP kSEXP, SEXP sSEXP, SEXP TSEXP, SEXP nsimSEXP, SEXP search_familySEXP, SEXP handling_familySEXP, SEXP predatorSEXP, SEXP cutSEXP, SEXP search_funSEXP, SEXP handling_funSEXP, SEXP force_generalSEXP, SEXP exclude_unfinishedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -47,7 +47,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< SEXP >::type search_fun(search_funSEXP);
     Rcpp::traits::input_parameter< SEXP >::type handling_fun(handling_funSEXP);
     Rcpp::traits::input_parameter< bool >::type force_general(force_generalSEXP);
-    rcpp_result_gen = Rcpp::wrap(sim_trials_cpp(H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general));
+    Rcpp::traits::input_parameter< bool >::type exclude_unfinished(exclude_unfinishedSEXP);
+    rcpp_result_gen = Rcpp::wrap(sim_trials_cpp(H, a, h, z, k, s, T, nsim, search_family, handling_family, predator, cut, search_fun, handling_fun, force_general, exclude_unfinished));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -103,7 +104,7 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_funresMech_draw_times_cpp", (DL_FUNC) &_funresMech_draw_times_cpp, 6},
-    {"_funresMech_sim_trials_cpp", (DL_FUNC) &_funresMech_sim_trials_cpp, 15},
+    {"_funresMech_sim_trials_cpp", (DL_FUNC) &_funresMech_sim_trials_cpp, 16},
     {"_funresMech_sim_engine_cpp", (DL_FUNC) &_funresMech_sim_engine_cpp, 9},
     {"_funresMech_count_loops_cpp", (DL_FUNC) &_funresMech_count_loops_cpp, 10},
     {"_funresMech_example_cpp_sampler", (DL_FUNC) &_funresMech_example_cpp_sampler, 0},

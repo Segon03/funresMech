@@ -67,10 +67,11 @@ if (any(tab$Verified == "no") || any(grepl("fail|warning", tab$Reliability)))
 f1 <- fits[[1]]
 m <- f1$model; ctl <- f1$control
 spec <- data.frame(
-  Item = c("Process", "Search times", "Handling times", "Fixed parameters", "Estimation of z",
+  Item = c("Process", "Host or prey in handling at T", "Search times", "Handling times", "Fixed parameters", "Estimation of z",
            "Trial duration", "Optimizer", "Simulated trials per density", "Generations x population",
            "Re-evaluations at each optimum", "funresMech version"),
-  Value = c(m$process, paste0(m$search$name, ", mean 1/(a x^z)"), paste0(m$handling$name, ", mean h"),
+  Value = c(m$process, if (identical(m$unfinished, "exclude")) "not counted" else "counted",
+            paste0(m$search$name, ", mean 1/(a x^z)"), paste0(m$handling$name, ", mean h"),
             if (length(m$fix)) paste(names(m$fix), unlist(m$fix), sep = " = ", collapse = ", ") else "none",
             if (!is.null(m$fix$z)) "fixed" else f1$z_method,
             paste(f1$T, f1$time_unit), ctl$method, ctl$n_sim, paste(ctl$itermax, "x", ctl$NP),
