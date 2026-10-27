@@ -125,7 +125,9 @@ generating_pmf <- function(g, x) {
 jobs <- do.call(rbind, lapply(SCEN$id, function(id)
   data.frame(arm = "phenomenological", scenario = id, dataset = seq_len(if (QUICK) 1 else 8),
              variant = "exploratory")))
-jobs$file <- file.path(DIR_RES, sprintf("%s__%s__d%d.rds", jobs$arm, jobs$scenario, jobs$dataset))
+# Short file names: with the default Windows limit of 260 characters per path,
+# long names inside a deep folder (for example, under OneDrive) cannot be written.
+jobs$file <- file.path(DIR_RES, sprintf("%s_d%d.rds", sub("^phenomenological_", "", jobs$scenario), jobs$dataset))
 pending <- jobs[!file.exists(jobs$file), ]
 cat(sprintf("Fits: %d in total, %d pending; %d workers.\n", nrow(jobs), nrow(pending), WORKERS))
 
