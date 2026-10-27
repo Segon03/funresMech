@@ -315,7 +315,7 @@ server <- function(input, output, session) {
           div(class = "meta", sprintf("z = %s, interval %s", signif(f$par[["z"]], 3), .interval_text(f))),
           div(class = "meta", sprintf("%d trials%s; %s", nrow(f$data),
                                       if (length(f$excluded_rows)) paste0(" (", length(f$excluded_rows), " excluded)") else "",
-                                      if (is.null(f$verification)) "not verified" else "verified")))
+                                      if (is.null(f[["verification"]])) "not verified" else "verified")))
     }))
   }
   output$status_strip <- renderUI(status_strip())
@@ -331,7 +331,7 @@ server <- function(input, output, session) {
   output$reliability_ui <- renderUI({
     f <- fit_of("rel_species")
     tagList(.reliability_html(reliability(f)),
-            if (is.null(f$verification)) p(class = "muted", "Verification not run: the checks above use only the information of the fit. Run the verification before reporting."))
+            if (is.null(f[["verification"]])) p(class = "muted", "Verification not run: the checks above use only the information of the fit. Run the verification before reporting."))
   })
   output$profile_plot_rel <- renderPlotly(.plotly(.plot_profile(fit_of("rel_species"))))
 
@@ -366,10 +366,10 @@ server <- function(input, output, session) {
   output$prelim_notice <- renderUI({
     f <- fit_of("res_species")
     st <- attr(reliability(f), "overall")
-    if (st == "ok" && !is.null(f$verification)) return(NULL)
+    if (st == "ok" && !is.null(f[["verification"]])) return(NULL)
     div(class = "notice",
         if (st == "fail") "Some reliability checks failed for this fit. Treat these results as unreliable and act on the checks in Reliability."
-        else if (is.null(f$verification)) "Preliminary: the fit has not been verified. See Reliability before reporting."
+        else if (is.null(f[["verification"]])) "Preliminary: the fit has not been verified. See Reliability before reporting."
         else "Some reliability checks gave warnings. See Reliability.")
   })
 
@@ -450,7 +450,7 @@ server <- function(input, output, session) {
                  z_high = if (is.null(f$ci)) NA else f$ci$z_high, nll = f$nll, nll_se = f$nll_se,
                  n_par = f$n_par, f$aic, trials = nrow(f$data), T = f$T, time_unit = f$time_unit,
                  reliability = attr(reliability(f), "overall"),
-                 verified = !is.null(f$verification))
+                 verified = !is.null(f[["verification"]]))
     })))
   output$dl_profiles <- csv_handler("funresMech_profiles", function()
     do.call(rbind, lapply(names(rv$fits), function(sp) cbind(species = sp, rv$fits[[sp]]$profile))))

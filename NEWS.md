@@ -85,6 +85,10 @@ reproduces version 1.1.0 exactly with the same random seed.
 * New `plot()` method for fits: the profile of z, the fitted response with the
   central 95% of simulated trials, and the predicted distribution of the
   counts at each density with the observed counts.
+* In the distribution figure, observed trials with the same count are
+  stacked, so every trial is visible.
+* The printed units of `a` now state that they depend on `z`: the encounter
+  rate is a x^z, so `a` is per unit of time per host^z (or prey^z).
 
 ## Interactive application
 

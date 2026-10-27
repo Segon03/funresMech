@@ -134,7 +134,7 @@ NULL
   fixed <- names(fit$model$fix)
   data.frame(
     Parameter = c("a", "h", "z", "k", "s"),
-    Meaning = c(paste0("Encounter-rate coefficient (per ", .unit1(u), ")"),
+    Meaning = c(paste0("Encounter-rate coefficient (per ", .unit1(u), " per ", .a_density_unit(fit), ")"),
                 paste0("Mean handling time (", u, ")"),
                 "Density-scaling exponent",
                 if (fit$model$search$user) "Shape of search sampler" else "Search dispersion (CV^2 = 1/k)",
@@ -257,13 +257,19 @@ theme_void_like <- function() {
     pr$panel <- factor(paste("density", pr$dens), levels = paste("density", sort(unique(pr$dens))))
     obs <- fit$data
     obs$panel <- factor(paste("density", obs$dens), levels = levels(pr$panel))
+    # one point per trial: trials with the same count are stacked below the axis
+    obs$stack <- stats::ave(obs$par, obs$dens, obs$par, FUN = seq_along)
+    top <- tapply(pr$prob, pr$dens, max)
+    obs$y <- -obs$stack * 0.08 * top[as.character(obs$dens)]
     return(ggplot(pr, aes(x = .data$response, y = .data$prob)) +
       ggplot2::geom_col(fill = .app_col$accent_soft, width = 0.9) +
-      geom_point(data = obs, aes(x = .data$par, y = 0), colour = .app_col$ink, size = 1.4,
+      geom_hline(yintercept = 0, colour = .app_col$slate, linewidth = 0.3) +
+      geom_point(data = obs, aes(x = .data$par, y = .data$y), colour = .app_col$ink, size = 1.2,
                  inherit.aes = FALSE) +
       facet_wrap(~ panel, scales = "free") +
       labs(x = ylab, y = "Simulated probability",
-           subtitle = "Bars: simulated distribution at the estimates. Points: observed trials.") +
+           subtitle = paste("Bars: simulated distribution at the estimates.",
+                            "Points below the axis: observed trials, one point per trial.")) +
       .app_theme(9))
   }
   sims$dens_f <- factor(sims$dens, levels = sort(unique(sims$dens)))

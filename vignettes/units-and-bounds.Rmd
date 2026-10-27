@@ -14,8 +14,10 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = FALSE)
 ## Time units
 
 The trial duration `T`, the handling time `h` and its standard deviation `s`
-share the time unit of the experiment, and the encounter-rate coefficient
-`a` is per unit of time. The unit can be minutes, hours, days or anything
+share the time unit of the experiment. The encounter rate at density `x` is
+`a x^z` per unit of time, so the encounter-rate coefficient `a` is per unit of
+time per (host or prey)^`z`: its units depend on `z`, and values of `a` can be
+compared only between fits with the same `z`. The unit can be minutes, hours, days or anything
 else: internally, funresMech measures time in units of `T`, so the same
 experiment entered in hours or in minutes gives the same fit, with `h` and
 `s` converted and `a` scaled accordingly. Give the unit a name for printed

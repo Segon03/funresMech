@@ -705,13 +705,21 @@ fit_funres <- function(data, T, model = funres_model(),
   notes
 }
 
+# Density unit of a: the encounter rate is a x^z, so a is per unit of time
+# per (host or prey)^z, and its units depend on the value of z
+.a_density_unit <- function(fit) {
+  who <- if (identical(fit$model$process, "predator")) "prey" else "host"
+  z <- fit$par[["z"]]
+  if (isTRUE(all.equal(z, 1))) who else paste0(who, "^", format(signif(z, 3)))
+}
+
 #' @export
 print.funres_fit <- function(x, digits = 4, ...) {
   print(x$model)
   u <- x$time_unit
   cat("\nEstimates (T = ", x$T, " ", u, "; ", nrow(x$data), " trials):\n", sep = "")
   p <- x$par
-  lab <- c(a = paste0("encounter-rate coefficient (1/", u, ")"),
+  lab <- c(a = paste0("encounter-rate coefficient (1/", u, " per ", .a_density_unit(x), ")"),
            h = paste0("mean handling time (", u, ")"),
            z = "density-scaling exponent",
            k = if (x$model$search$user) "shape of search sampler" else "search dispersion (CV^2 = 1/k)",
@@ -733,7 +741,7 @@ print.funres_fit <- function(x, digits = 4, ...) {
                 x$aic$delta_AIC_BB))
   rel <- reliability(x)
   cat("\nReliability: ", toupper(attr(rel, "overall")),
-      if (is.null(x$verification)) " (cheap checks only; run verify_fit() before reporting)",
+      if (is.null(x[["verification"]])) " (cheap checks only; run verify_fit() before reporting)",
       ". See reliability().\n", sep = "")
   bad <- rel[rel$status != "ok", , drop = FALSE]
   for (j in seq_len(nrow(bad)))

@@ -127,7 +127,7 @@ reliability <- function(fit) {
     rows$preset <- .rel_row("Settings suitable for reporting", "warning", NA_real_,
                             "exploratory preset",
                             "Refit with funres_control('standard') or 'final' before reporting.")
-  if (!is.null(fit$verification)) rows <- c(rows, list(fit$verification))
+  if (!is.null(fit[["verification"]])) rows <- c(rows, list(fit[["verification"]]))
 
   out <- do.call(rbind, rows)
   rownames(out) <- NULL

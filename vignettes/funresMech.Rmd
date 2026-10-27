@@ -118,7 +118,7 @@ Mechanistic functional response model (simulation-based likelihood)
   Free parameters: a, h, z, k, s
 
 Estimates (T = 24 h; 64 trials):
-  a  = 0.01439      encounter-rate coefficient (1/h)
+  a  = 0.01439      encounter-rate coefficient (1/h per host^2)
   h  = 0.5912       mean handling time (h)
   z  = 2            density-scaling exponent
   k  = 0.0172       search dispersion (CV^2 = 1/k)

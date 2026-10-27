@@ -104,9 +104,16 @@ test_that("figures and tables of the application build for a fit", {
                  funresMech:::.plot_distribution(f, sims, "violin")))
     expect_silent(ggplot2::ggplot_build(g))
   expect_equal(nrow(funresMech:::.estimates_table(f)), 5)
-  expect_match(funresMech:::.estimates_table(f)$Meaning[1], "per hour\\)")
+  expect_match(funresMech:::.estimates_table(f)$Meaning[1], "per hour per host")
+  expect_output(print(f), "per host")
+  # the distribution figure shows one point per trial, also for repeated counts
+  f2 <- f; f2$data <- rbind(f$data, f$data[1:2, ])
+  pts <- ggplot2::ggplot_build(plot(f2, type = "distribution", n_sim = 100))$data[[3]]
+  expect_equal(nrow(pts), nrow(f2$data))
+  expect_true(all(pts$y < 0))
   expect_true(nrow(funresMech:::.aic_table(f)) >= 1)
   expect_equal(ncol(funresMech:::.comparison_row(f, "m", "D3")), 13)
   expect_equal(funresMech:::.format_duration(30), "30 s")
   expect_equal(funresMech:::.format_duration(600), "10 min")
 })
+
