@@ -5,14 +5,19 @@
 # (parasitoid process), to compare them with the simulation-based method on
 # the same datasets. For each of the 432 simulated datasets of the simulation
 # study (core, dense and extended-range designs; validation/data/
-# simulated_datasets_parasitoid.csv), six conventional fits are made:
+# simulated_datasets_parasitoid.csv), nine conventional fits are made:
 #
 #   mean function  x  error model
+#   holling        x  binomial ML, beta-binomial ML, least squares
 #   rogers         x  binomial ML, beta-binomial ML, least squares
 #   eq2            x  binomial ML, beta-binomial ML, least squares
 #
+#   holling Generalized Holling disc equation, as in frair's flexp and
+#           hollingsII (prey
+#           replaced, so the density stays constant):
+#             Ne = a N0^z T / (1 + a h N0^z), capped at N0.
 #   rogers  Generalized Rogers random predator equation, as in frair's
-#           flexpnr (prey not replaced; attack rate b N0^q with z = q + 1),
+#           flexpnr and rogersII (prey not replaced; attack rate b N0^q with z = q + 1),
 #           the usual choice in functional-response studies:
 #             Ne = N0 {1 - exp[a N0^(z-1) (h Ne - T)]}, solved with the
 #             Lambert W function.
@@ -31,9 +36,15 @@
 # The results are merged with the simulation-based fits of the same datasets
 # (validation/tables/simulation_study_fits.csv and extended_range_fits.csv).
 #
+# The first two are the flexible models of frair with and without
+# replacement, the usual choices in functional-response studies; frair has
+# no model for a parasitoid that leaves hosts in the arena and is counted by
+# distinct hosts, which is what eq2 (Rogers' random parasite equation for
+# z = 1) represents.
+#
 # Usage, from the root of the package repository:
 #   QUICK <- TRUE;  source("validation/R/22_conventional_methods.R")   # 6 datasets
-#   rm(list = ls()); source("validation/R/22_conventional_methods.R")    # all, about 1 h on 2 cores
+#   rm(list = ls()); source("validation/R/22_conventional_methods.R")    # all: about 2 h on one core, minutes on 20 or more
 # Results: validation/tables/conventional_fits.csv and conventional_summary.csv.
 # ============================================================================
 
@@ -74,7 +85,8 @@ mean_rogers <- function(N, a, h, z) {
   N - lambertW_log(lx) / (ae * h)
 }
 mean_eq2 <- function(N, a, h, z) funresMech:::.mu_parasitoid(N, a, h, z, 1)
-MEANS <- list(rogers = mean_rogers, eq2 = mean_eq2)
+mean_holling <- function(N, a, h, z) a * N^z / (1 + a * h * N^z)
+MEANS <- list(holling = mean_holling, rogers = mean_rogers, eq2 = mean_eq2)
 
 LO <- c(log(1e-8), log(1e-6), log(0.1), -14)
 UP <- c(log(1e4), log(1), log(20), 7)
@@ -175,14 +187,14 @@ scenario_of <- function(id) {
   e
 }
 
-run_key <- function(i) {
+run_key <- function(i, means = names(MEANS)) {
   library(funresMech)
   key <- keys[i, ]
   d <- D[D$scenario == key$scenario & D$dataset == key$dataset & D$source == key$source, c("dens", "par")]
   e <- scenario_of(key$scenario)
   p0 <- true_parameters(e)
   set.seed(1000 + i)
-  out <- do.call(rbind, lapply(names(MEANS), function(m) do.call(rbind, lapply(c("binomial", "bb", "ls"),
+  out <- do.call(rbind, lapply(means, function(m) do.call(rbind, lapply(c("binomial", "bb", "ls"),
     function(err) analyse(d, m, err, e$z)))))
   cbind(key[rep(1, nrow(out)), ], out, z = e$z, a_true = p0[["a"]], h_true = p0[["h"]], k = e$k,
         s_over_h = e$s_over_h, h_over_T = e$h_over_T, E = e$E, design = e$design, n_trials = nrow(d),
@@ -193,16 +205,26 @@ run_key <- function(i) {
 DIR_RES <- file.path("validation", "results", if (QUICK) "conventional_quick" else "conventional")
 dir.create(DIR_RES, recursive = TRUE, showWarnings = FALSE)
 res_file <- function(i) file.path(DIR_RES, sprintf("%s__%s__d%d.rds", keys$source[i], keys$scenario[i], keys$dataset[i]))
-pending <- which(!file.exists(vapply(seq_len(nrow(keys)), res_file, "")))
+# datasets with no file, or with a file that lacks some mean function
+missing_means <- function(i) {
+  f <- res_file(i)
+  if (!file.exists(f)) return(names(MEANS))
+  setdiff(names(MEANS), unique(readRDS(f)$mean))
+}
+todo <- lapply(seq_len(nrow(keys)), missing_means)
+pending <- which(lengths(todo) > 0)
 cat(sprintf("Datasets: %d in total, %d pending; %d workers.\n", nrow(keys), length(pending), WORKERS))
 if (length(pending)) {
   cl <- parallel::makeCluster(WORKERS)
   parallel::clusterExport(cl, c("keys", "D", "MEANS", "LO", "UP", "objective", "par_index", "fit_one",
                                 "profile_value", "analyse", "scenario_of", "lambertW_log", "mean_rogers",
-                                "mean_eq2", "scenario", "BASE_SCENARIO", "true_parameters", "DESIGNS", "T_EXP",
-                                "run_key", "res_file", "DIR_RES"))
+                                "mean_eq2", "mean_holling", "scenario", "BASE_SCENARIO", "true_parameters",
+                                "DESIGNS", "T_EXP", "run_key", "res_file", "DIR_RES", "todo"))
   t0 <- Sys.time()
-  invisible(parallel::parLapplyLB(cl, pending, function(i) { saveRDS(run_key(i), res_file(i)); TRUE }))
+  invisible(parallel::parLapplyLB(cl, pending, function(i) {
+    new <- run_key(i, todo[[i]])
+    old <- if (file.exists(res_file(i))) readRDS(res_file(i))
+    saveRDS(rbind(old, new), res_file(i)); TRUE }))
   parallel::stopCluster(cl)
   cat(sprintf("Conventional fits of %d datasets in %.1f min\n", length(pending),
               as.numeric(difftime(Sys.time(), t0, units = "mins"))))
