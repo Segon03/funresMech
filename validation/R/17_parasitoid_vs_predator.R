@@ -36,8 +36,8 @@ run_one <- function(job) {
   library(funresMech)
   future::plan(future::sequential)
   d <- read_published(job$data)
-  ctrl <- if (QUICK) funres_control("exploratory", n_sim = 300, itermax = 8, NP = 16, n_reeval = 2, bb = FALSE)
-          else funres_control("exploratory", bb = FALSE)
+  ctrl <- if (QUICK) funres_control(n_sim = 300, itermax = 8, NP = 16, n_reeval = 2, bb = FALSE)
+          else funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, bb = FALSE)
   set.seed(fit_seed("17", "process_comparison", job$data, job$seed_run, job$process))
   t0 <- proc.time()[["elapsed"]]
   f <- suppressWarnings(fit_funres(d, T = T_EXP, model = funres_model(process = job$process),

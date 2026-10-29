@@ -34,8 +34,8 @@ WORKERS <- if (QUICK) 2L else max(1L, parallel::detectCores() - 1L)
 DIR_OUT <- file.path("validation", if (QUICK) "worked_example_quick" else "worked_example")
 dir.create(DIR_OUT, recursive = TRUE, showWarnings = FALSE)
 
-control <- if (QUICK) funres_control("exploratory", n_sim = 300, itermax = 8, NP = 16) else
-  funres_control("standard")
+control <- if (QUICK) funres_control(n_reeval = 3, n_sim = 300, itermax = 8, NP = 16) else
+  funres_control()
 z_grid <- if (QUICK) c(0.5, 1, 2, 3) else seq(0.5, 5, by = 0.25)   # the default grid of fit_funres()
 
 save_output <- function(file, expr) {

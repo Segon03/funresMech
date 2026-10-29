@@ -5,7 +5,7 @@ app_inputs <- list(
   time_unit = "hours", T_exp = 24, exclude_flagged = FALSE, process = "parasitoid",
   search = "gamma", handling = "lognormal", fix_k = FALSE, fix_s = FALSE,
   z_mode = "profile", z_min = 1, z_max = 2, z_step = 1, extend_z = FALSE,
-  z_step_joint = 0.5, z_value = 1, preset = "exploratory", n_sim = 150, itermax = 4,
+  z_step_joint = 0.5, z_value = 1, n_sim = 150, itermax = 4,
   NP = 12, n_reeval = 2, method = "DEoptim", crn = FALSE, polish = FALSE, widen = FALSE,
   seed = 1, parallel = FALSE, workers = 1, custom_bounds = FALSE,
   search_code = "function(n, shape) rgamma(n, shape = shape, rate = shape)",
@@ -93,7 +93,7 @@ test_that("custom samplers from code and the R script of a custom model", {
 test_that("figures and tables of the application build for a fit", {
   skip_on_cran()
   d <- read.csv(test_path("fixtures", "D3.csv"))
-  ctrl <- funres_control("exploratory", n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
+  ctrl <- funres_control(n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
   set.seed(1)
   f <- suppressWarnings(fit_funres(d, 24, z_grid = c(1, 2, 3), control = ctrl, extend_z = FALSE,
                                    refine = FALSE, time_unit = "hours"))

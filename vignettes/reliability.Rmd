@@ -44,10 +44,9 @@ funresMech detects it and what to do.
 | Profile of z regular | The profile has extra local minima beyond Monte Carlo noise. | Increase `itermax`, `NP` and `n_sim` and refit. |
 | Interval of z closed | A limit of the interval is open. | Extend the grid of `z`; an open limit after extension means that the data do not bound `z` on that side. |
 | Search dispersion k not extreme | `k` < 0.1. | Check the screening for atypical trials; consider fixing `k` and comparing by AIC. |
-| Settings suitable for reporting | The exploratory preset was used. | Refit with the standard or final preset. |
 | Independent runs agree (NLL) | The NLL of independent runs differs by more than 0.5 (warning) or 1.92 (fail). | Increase `itermax`, `NP` and `n_sim`. |
 | Independent runs agree (a, h) | `a` or `h` differ by more than 25% between runs. | More effort; interpret `a` and `h` with caution. |
-| More effort does not improve the optimum | Twice the effort improves the NLL by more than 1 unit. | Refit the whole profile with the final preset. |
+| More effort does not improve the optimum | Twice the effort improves the NLL by more than 1 unit. | Refit the whole profile with more simulations and generations (`n_sim`, `itermax`). |
 | Wider bounds do not improve the optimum | Bounds ten times wider improve the NLL by more than 1 unit. | Refit with wider bounds. |
 
 ## A recommended workflow
@@ -60,12 +59,12 @@ screen_outliers(d, T = 24)                           # 1. atypical trials
 
 set.seed(1)
 fit <- fit_funres(d, T = 24,                          # 2. first look
-                  control = funres_control("exploratory"))
+                  control = funres_control(n_sim = 2000, itermax = 50, n_reeval = 3))
 reliability(fit)
 
 set.seed(2)
 fit <- fit_funres(d, T = 24,                          # 3. fit to report
-                  control = funres_control("standard"))
+                  control = funres_control())
 fit <- verify_fit(fit)                                # 4. verification
 reliability(fit)                                      # 5. no check may fail
 ```
@@ -92,12 +91,13 @@ host densities):
 * When the true response was type II, the interval excluded `z` = 1 in 4% to
   8% of the fits. When `z` was 1.75 or 2.75, it excluded `z` = 1 in 83% to
   100% of the fits.
-* With the standard preset, the checks gave false alarms in at most 6% of the
-  fits. With the exploratory preset, about half of the fits received
-  warnings about noise or convergence, as intended: that preset is not meant
-  for reporting.
-* The standard preset gave the same coverage as the exploratory preset but
-  more reliable optima, so use it (or the final preset) for reporting.
+* With the default settings (`n_sim = 5000`, `itermax = 100`), the checks gave
+  false alarms in at most 6% of the fits. With cheaper settings
+  (`n_sim = 2000`, `itermax = 50`), about half of the fits received warnings
+  about noise or convergence, as intended.
+* The cheaper settings gave the same coverage as the defaults but less
+  reliable optima, so report fits made with at least the default effort and
+  checked with `verify_fit()`.
 
 ## Recommendations for experimental design
 
@@ -111,7 +111,7 @@ host densities):
 ## What to report
 
 * The package version, the model (distributions, process, fixed
-  parameters), the preset or the settings, and the random seed.
+  parameters), the settings of `funres_control()`, and the random seed.
 * The estimates with the 95% interval of `z`, stating whether a limit is
   open.
 * The result of `reliability()` after `verify_fit()`.

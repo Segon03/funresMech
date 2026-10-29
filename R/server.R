@@ -154,7 +154,7 @@ server <- function(input, output, session) {
          fix_k = input$fix_k, k_value = input$k_value, fix_s = input$fix_s, s_value = input$s_value,
          z_mode = input$z_mode, z_value = input$z_value, z_min = input$z_min, z_max = input$z_max,
          z_step = if (identical(input$z_mode, "joint")) input$z_step_joint else input$z_step,
-         extend_z = input$extend_z, preset = input$preset, n_sim = input$n_sim,
+         extend_z = input$extend_z, n_sim = input$n_sim,
          itermax = input$itermax, NP = input$NP, n_reeval = input$n_reeval, method = input$method,
          crn = input$crn, polish = input$polish, widen = input$widen, seed = input$seed,
          parallel = input$parallel, workers = input$workers,
@@ -164,19 +164,6 @@ server <- function(input, output, session) {
          b_cv_lo = input$b_cv_lo, b_cv_hi = input$b_cv_hi, b_z_lo = input$b_z_lo, b_z_hi = input$b_z_hi,
          T_exp = input$T_exp, time_unit = time_unit())
   })
-
-  # Presets fill in the effort settings only when the preset really changes,
-  # so that values edited by the user are never overwritten silently.
-  last_preset <- shiny::reactiveVal("standard")
-  observeEvent(input$preset, {
-    if (identical(input$preset, last_preset())) return()
-    last_preset(input$preset)
-    p <- funres_control(input$preset)
-    updateNumericInput(session, "n_sim", value = p$n_sim)
-    updateNumericInput(session, "itermax", value = p$itermax)
-    updateNumericInput(session, "NP", value = p$NP)
-    updateNumericInput(session, "n_reeval", value = p$n_reeval)
-  }, ignoreInit = TRUE)
 
   model <- reactive(tryCatch(.app_model(opts()), error = function(e) e))
   control <- reactive(tryCatch(.app_control(opts()), error = function(e) e))
@@ -207,9 +194,7 @@ server <- function(input, output, session) {
           tags$tr(tags$th("Optimization"), tags$td(sprintf("%s; n_sim %d, %d generations, population %d, %d re-evaluations",
                                                          ctl$method, ctl$n_sim, ctl$itermax, ctl$NP, ctl$n_reeval))),
           if (!is.null(rv$runtime)) tags$tr(tags$th("Estimated run time"), tags$td(rv$runtime))
-        )),
-      if (ctl$preset == "exploratory")
-        div(class = "notice", "Exploratory settings give a quick first look. Do not report results from them; refit with the standard or final preset.")
+        ))
     )
   })
 
@@ -378,8 +363,9 @@ server <- function(input, output, session) {
     tagList(
       .html_table(.estimates_table(f)),
       p(strong("95% interval of z: "), .interval_text(f)),
-      p(class = "muted", sprintf("NLL %.3f (Monte Carlo SE %.3f); %d free parameters; %d trials; T = %s %s; settings: %s.",
-                                 f$nll, f$nll_se, f$n_par, nrow(f$data), f$T, f$time_unit, f$control$preset))
+      p(class = "muted", sprintf("NLL %.3f (Monte Carlo SE %.3f); %d free parameters; %d trials; T = %s %s; settings: n_sim %d, %d generations, population %d.",
+                                 f$nll, f$nll_se, f$n_par, nrow(f$data), f$T, f$time_unit,
+                                 as.integer(f$control$n_sim), as.integer(f$control$itermax), as.integer(f$control$NP)))
     )
   })
 

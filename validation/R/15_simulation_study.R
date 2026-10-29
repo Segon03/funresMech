@@ -42,8 +42,8 @@ N_PRECISE <- if (QUICK) 2000L else 20000L
 control_for <- function(preset, ...) {
   if (QUICK) {
     p <- switch(preset, exploratory = list(n_sim = 200, itermax = 5), standard = list(n_sim = 300, itermax = 8))
-    funres_control(preset, n_sim = p$n_sim, itermax = p$itermax, NP = 12, n_reeval = 2, ...)
-  } else funres_control(preset, ...)
+    effort_control(preset, n_sim = p$n_sim, itermax = p$itermax, NP = 12, n_reeval = 2, ...)
+  } else effort_control(preset, ...)
 }
 
 Z <- c(1, 1.75, 2.75); K <- c(0.2, 1, 5)
@@ -89,7 +89,7 @@ run_one <- function(job) {
 
 run_jobs(pending, run_one,
          globals = mget(c("run_one", "pending", "SCEN", "DESIGNS", "T_EXP", "GRID", "N_PRECISE", "QUICK",
-                          "control_for", "true_parameters", "simulate_dataset", "generating_model",
+                          "control_for", "EFFORT", "effort_control", "true_parameters", "simulate_dataset", "generating_model",
                           "data_seed", "fit_seed", "SEEDS_DATA", "SEEDS_FIT", "precise_nll", "lighten",
                           "fit_row", "checks_long")),
          workers = WORKERS, log_file = file.path(DIR_RES, "errors.log"))

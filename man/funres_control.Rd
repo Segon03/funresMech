@@ -5,13 +5,12 @@
 \title{Settings of the simulated-likelihood fit}
 \usage{
 funres_control(
-  preset = c("standard", "exploratory", "final"),
-  n_sim,
-  itermax,
-  NP,
-  reltol,
-  steptol,
-  n_reeval,
+  n_sim = 5000L,
+  itermax = 100L,
+  NP = 40L,
+  n_reeval = 5L,
+  reltol = 1e-08,
+  steptol = itermax,
   method = "DEoptim",
   bounds = list(),
   widen = 2L,
@@ -23,24 +22,22 @@ funres_control(
 )
 }
 \arguments{
-\item{preset}{\code{"standard"} (default), \code{"exploratory"} or \code{"final"}.}
-
 \item{n_sim}{Simulated trials per host density for each evaluation of the
-likelihood. Larger values reduce Monte Carlo noise.}
+likelihood (default 5000). Larger values reduce Monte Carlo noise.}
 
-\item{itermax}{Generations of differential evolution (DEoptim).}
+\item{itermax}{Generations of differential evolution (default 100).}
 
-\item{NP}{Population size of differential evolution.}
+\item{NP}{Population size of differential evolution (default 40).}
+
+\item{n_reeval}{Number of fresh evaluations of the likelihood at each
+optimum (default 5). Their mean (an unbiased estimate, unlike the minimum
+found by the optimizer) is used for the profile, the estimate of z and
+its interval; their standard error measures Monte Carlo noise.}
 
 \item{reltol, steptol}{Early stopping of DEoptim: the search stops when the
 best value has not improved by a relative amount \code{reltol} in \code{steptol}
 generations. By default \code{steptol = itermax}, i.e. no early stopping,
 because a noisy objective can stall temporarily.}
-
-\item{n_reeval}{Number of fresh evaluations of the likelihood at each
-optimum. Their mean (an unbiased estimate, unlike the minimum found by
-the optimizer) is used for the profile, the estimate of z and its
-interval; their standard error measures Monte Carlo noise.}
 
 \item{method}{Optimization method: \code{"DEoptim"} (differential evolution,
 default), \code{"CMAES"} (covariance matrix adaptation evolution strategy,
@@ -82,36 +79,48 @@ where it persists is flagged and left out of the interval of z.}
 An object of class \code{funres_control}.
 }
 \description{
-Collects the settings of the optimizer and of the Monte Carlo
-approximation of the likelihood. Three presets are offered. \strong{The
-exploratory preset is not meant for results to be reported}: it is a
-quick first look. Results must be checked with the reliability
-diagnostics returned by \code{\link[=fit_funres]{fit_funres()}} whatever the preset.
+Collects the settings of the Monte Carlo approximation of the likelihood
+and of the optimizer. Every setting has a documented default and can be
+changed. The computing effort a dataset needs depends on the data and the
+model, so no setting guarantees a reliable fit: check every fit with
+\code{\link[=reliability]{reliability()}} and \code{\link[=verify_fit]{verify_fit()}}, and report the settings used.
 }
 \details{
-\tabular{lllll}{
-   preset \tab n_sim \tab itermax \tab NP \tab n_reeval \cr
-   exploratory \tab 2000 \tab 50 \tab 40 \tab 3 \cr
-   standard \tab 5000 \tab 100 \tab 40 \tab 5 \cr
-   final \tab 10000 \tab 200 \tab 40 \tab 5 \cr
-}
+\strong{Monte Carlo approximation.} For each evaluation of the likelihood,
+\code{n_sim} trials are simulated at each host density, and the probability of
+each observed count is its frequency among them. At each optimum, the
+likelihood is evaluated again \code{n_reeval} times with fresh random numbers;
+the mean of these evaluations is used for the profile, the estimate of z
+and its interval, and their standard error measures the Monte Carlo noise.
 
+\strong{Optimizer.} By default, differential evolution (DEoptim) with a
+population of \code{NP} parameter vectors that evolves for \code{itermax}
+generations, searching within the bounds described in \code{\link[=fit_funres]{fit_funres()}},
+followed by \code{polish} evaluations of a Nelder-Mead search from the best
+point. Each fit of a profile point therefore costs about
+\code{NP * itermax + polish} evaluations of the likelihood, each with \code{n_sim}
+simulated trials per density.
 
-The final preset reproduces the settings of the published analyses of this method (Okuyama 2026).
+\strong{Choice of values.} The defaults (\code{n_sim = 5000}, \code{itermax = 100},
+\code{NP = 40}, \code{n_reeval = 5}) passed the reliability checks in most simulated
+datasets of the validation (validation/ folder of the source package). A
+cheaper setting (\code{n_sim = 2000}, \code{itermax = 50}, \code{n_reeval = 3}) gave the
+same coverage of the interval of z in the simulation study but failed more
+checks of independent runs; it is useful to explore a dataset. A more
+expensive setting (\code{n_sim = 10000}, \code{itermax = 200}) is the one used by
+Okuyama (2026). If \code{\link[=verify_fit]{verify_fit()}} finds that more effort improves the
+optimum, increase \code{n_sim} and \code{itermax} and refit.
 
 \strong{Default optimizer.} Differential evolution with common random numbers
 and a Nelder-Mead polish was chosen in a comparison of strategies with
-equal budgets on simulated data with known parameters (validation/,
-phase 4): it reached the best optimum found within 0.5 NLL units in 80\% of
-the runs and never missed it by more than 2.2 units, whereas plain
-differential evolution (the method of version 1.1.0) reached it in 43\% of
-the runs, CMA-ES in 78\% (with occasional failures of up to 68 units) and
-CRS2 in 67\%. Even the best strategy missed the best optimum in one run out
-of five with the exploratory budget: check every fit with \code{\link[=reliability]{reliability()}}
-and \code{\link[=verify_fit]{verify_fit()}}.
+equal budgets on simulated data with known parameters (validation/): it
+reached the best optimum found within 0.5 NLL units in 80\% of the runs and
+never missed it by more than 2.2 units, whereas plain differential
+evolution (the method of version 1.1.0) reached it in 43\% of the runs,
+CMA-ES in 78\% (with occasional failures of up to 68 units) and CRS2 in 67\%.
 }
 \examples{
-funres_control()
-funres_control("final")
-funres_control("exploratory", n_sim = 3000)
+funres_control()                                   # defaults
+funres_control(n_sim = 2000, itermax = 50, n_reeval = 3)   # cheaper, to explore
+funres_control(n_sim = 10000, itermax = 200)       # more effort
 }

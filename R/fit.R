@@ -10,44 +10,57 @@ NULL
 
 #' Settings of the simulated-likelihood fit
 #'
-#' Collects the settings of the optimizer and of the Monte Carlo
-#' approximation of the likelihood. Three presets are offered. **The
-#' exploratory preset is not meant for results to be reported**: it is a
-#' quick first look. Results must be checked with the reliability
-#' diagnostics returned by [fit_funres()] whatever the preset.
+#' Collects the settings of the Monte Carlo approximation of the likelihood
+#' and of the optimizer. Every setting has a documented default and can be
+#' changed. The computing effort a dataset needs depends on the data and the
+#' model, so no setting guarantees a reliable fit: check every fit with
+#' [reliability()] and [verify_fit()], and report the settings used.
 #'
-#' | preset | n_sim | itermax | NP | n_reeval |
-#' |---|---|---|---|---|
-#' | exploratory | 2000 | 50 | 40 | 3 |
-#' | standard | 5000 | 100 | 40 | 5 |
-#' | final | 10000 | 200 | 40 | 5 |
+#' **Monte Carlo approximation.** For each evaluation of the likelihood,
+#' `n_sim` trials are simulated at each host density, and the probability of
+#' each observed count is its frequency among them. At each optimum, the
+#' likelihood is evaluated again `n_reeval` times with fresh random numbers;
+#' the mean of these evaluations is used for the profile, the estimate of z
+#' and its interval, and their standard error measures the Monte Carlo noise.
 #'
-#' The final preset reproduces the settings of the published analyses of this method (Okuyama 2026).
+#' **Optimizer.** By default, differential evolution (DEoptim) with a
+#' population of `NP` parameter vectors that evolves for `itermax`
+#' generations, searching within the bounds described in [fit_funres()],
+#' followed by `polish` evaluations of a Nelder-Mead search from the best
+#' point. Each fit of a profile point therefore costs about
+#' `NP * itermax + polish` evaluations of the likelihood, each with `n_sim`
+#' simulated trials per density.
+#'
+#' **Choice of values.** The defaults (`n_sim = 5000`, `itermax = 100`,
+#' `NP = 40`, `n_reeval = 5`) passed the reliability checks in most simulated
+#' datasets of the validation (validation/ folder of the source package). A
+#' cheaper setting (`n_sim = 2000`, `itermax = 50`, `n_reeval = 3`) gave the
+#' same coverage of the interval of z in the simulation study but failed more
+#' checks of independent runs; it is useful to explore a dataset. A more
+#' expensive setting (`n_sim = 10000`, `itermax = 200`) is the one used by
+#' Okuyama (2026). If [verify_fit()] finds that more effort improves the
+#' optimum, increase `n_sim` and `itermax` and refit.
 #'
 #' **Default optimizer.** Differential evolution with common random numbers
 #' and a Nelder-Mead polish was chosen in a comparison of strategies with
-#' equal budgets on simulated data with known parameters (validation/,
-#' phase 4): it reached the best optimum found within 0.5 NLL units in 80% of
-#' the runs and never missed it by more than 2.2 units, whereas plain
-#' differential evolution (the method of version 1.1.0) reached it in 43% of
-#' the runs, CMA-ES in 78% (with occasional failures of up to 68 units) and
-#' CRS2 in 67%. Even the best strategy missed the best optimum in one run out
-#' of five with the exploratory budget: check every fit with [reliability()]
-#' and [verify_fit()].
+#' equal budgets on simulated data with known parameters (validation/): it
+#' reached the best optimum found within 0.5 NLL units in 80% of the runs and
+#' never missed it by more than 2.2 units, whereas plain differential
+#' evolution (the method of version 1.1.0) reached it in 43% of the runs,
+#' CMA-ES in 78% (with occasional failures of up to 68 units) and CRS2 in 67%.
 #'
-#' @param preset `"standard"` (default), `"exploratory"` or `"final"`.
 #' @param n_sim Simulated trials per host density for each evaluation of the
-#'   likelihood. Larger values reduce Monte Carlo noise.
-#' @param itermax Generations of differential evolution (DEoptim).
-#' @param NP Population size of differential evolution.
+#'   likelihood (default 5000). Larger values reduce Monte Carlo noise.
+#' @param itermax Generations of differential evolution (default 100).
+#' @param NP Population size of differential evolution (default 40).
+#' @param n_reeval Number of fresh evaluations of the likelihood at each
+#'   optimum (default 5). Their mean (an unbiased estimate, unlike the minimum
+#'   found by the optimizer) is used for the profile, the estimate of z and
+#'   its interval; their standard error measures Monte Carlo noise.
 #' @param reltol,steptol Early stopping of DEoptim: the search stops when the
 #'   best value has not improved by a relative amount `reltol` in `steptol`
 #'   generations. By default `steptol = itermax`, i.e. no early stopping,
 #'   because a noisy objective can stall temporarily.
-#' @param n_reeval Number of fresh evaluations of the likelihood at each
-#'   optimum. Their mean (an unbiased estimate, unlike the minimum found by
-#'   the optimizer) is used for the profile, the estimate of z and its
-#'   interval; their standard error measures Monte Carlo noise.
 #' @param method Optimization method: `"DEoptim"` (differential evolution,
 #'   default), `"CMAES"` (covariance matrix adaptation evolution strategy,
 #'   package 'cmaes') or `"CRS2"` (controlled random search with local
@@ -78,43 +91,42 @@ NULL
 #'   where it persists is flagged and left out of the interval of z.
 #' @return An object of class `funres_control`.
 #' @examples
-#' funres_control()
-#' funres_control("final")
-#' funres_control("exploratory", n_sim = 3000)
+#' funres_control()                                   # defaults
+#' funres_control(n_sim = 2000, itermax = 50, n_reeval = 3)   # cheaper, to explore
+#' funres_control(n_sim = 10000, itermax = 200)       # more effort
 #' @export
-funres_control <- function(preset = c("standard", "exploratory", "final"),
-                           n_sim, itermax, NP, reltol, steptol, n_reeval,
+funres_control <- function(n_sim = 5000L, itermax = 100L, NP = 40L, n_reeval = 5L,
+                           reltol = 1e-8, steptol = itermax,
                            method = "DEoptim", bounds = list(), widen = 2L,
                            bb = TRUE, crn = TRUE, polish = 200L, cut = TRUE,
                            floor_retry = 2L) {
-  preset <- match.arg(preset)
-  p <- switch(preset,
-              exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
-              standard    = list(n_sim = 5000L, itermax = 100L, NP = 40L, n_reeval = 5L),
-              final       = list(n_sim = 10000L, itermax = 200L, NP = 40L, n_reeval = 5L))
-  if (!missing(n_sim))    p$n_sim <- as.integer(n_sim)
-  if (!missing(itermax))  p$itermax <- as.integer(itermax)
-  if (!missing(NP))       p$NP <- as.integer(NP)
-  if (!missing(n_reeval)) p$n_reeval <- as.integer(n_reeval)
-  p$reltol  <- if (missing(reltol)) 1e-8 else reltol
-  p$steptol <- if (missing(steptol)) p$itermax else as.integer(steptol)
+  if (is.character(n_sim))
+    stop("Presets were removed in funresMech 1.2.0: set the values directly, for example ",
+         "funres_control(n_sim = 2000, itermax = 50, n_reeval = 3). See ?funres_control.",
+         call. = FALSE)
+  num1 <- function(v, nm) {
+    if (!is.numeric(v) || length(v) != 1 || !is.finite(v)) stop(nm, " must be one finite number.", call. = FALSE)
+    v
+  }
+  p <- list(n_sim = as.integer(num1(n_sim, "n_sim")), itermax = as.integer(num1(itermax, "itermax")),
+            NP = as.integer(num1(NP, "NP")), n_reeval = as.integer(num1(n_reeval, "n_reeval")),
+            reltol = num1(reltol, "reltol"), steptol = as.integer(num1(steptol, "steptol")))
   method <- match.arg(method, c("DEoptim", "CMAES", "CRS2"))
   if (p$n_sim < 100) stop("n_sim must be >= 100.", call. = FALSE)
+  if (p$itermax < 1) stop("itermax must be >= 1.", call. = FALSE)
   if (p$NP < 4) stop("NP must be >= 4.", call. = FALSE)
   if (p$n_reeval < 1) stop("n_reeval must be >= 1.", call. = FALSE)
-  structure(c(list(preset = preset), p,
-              list(method = method, bounds = bounds, widen = as.integer(widen),
-                   bb = isTRUE(bb), crn = isTRUE(crn), polish = as.integer(polish),
-                   cut = isTRUE(cut), floor_retry = max(0L, as.integer(floor_retry)))),
+  structure(c(p, list(method = method, bounds = bounds, widen = as.integer(widen),
+                      bb = isTRUE(bb), crn = isTRUE(crn), polish = as.integer(polish),
+                      cut = isTRUE(cut), floor_retry = max(0L, as.integer(floor_retry)))),
             class = "funres_control")
 }
 
 #' @export
 print.funres_control <- function(x, ...) {
-  cat("funres_control: preset '", x$preset, "'", if (x$preset == "exploratory")
-    " (exploratory: not for reporting results)", "\n", sep = "")
-  cat("  n_sim = ", x$n_sim, ", itermax = ", x$itermax, ", NP = ", x$NP,
-      ", n_reeval = ", x$n_reeval, ", method = ", x$method, "\n", sep = "")
+  cat("funres_control: n_sim = ", x$n_sim, " simulated trials per density; ", x$method,
+      " with NP = ", x$NP, " and itermax = ", x$itermax, " (polish ", x$polish,
+      "); n_reeval = ", x$n_reeval, "\n", sep = "")
   if (length(x$bounds))
     cat("  user bounds: ", paste(names(x$bounds), collapse = ", "), "\n", sep = "")
   invisible(x)
@@ -519,8 +531,8 @@ print.funres_control <- function(x, ...) {
 #'                 par  = c(0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 10, 12))
 #' set.seed(1)
 #' fit <- fit_funres(d, T = 24, z_grid = c(0.5, 1, 2),
-#'                   control = funres_control("exploratory", n_sim = 300,
-#'                                            itermax = 10, NP = 20),
+#'                   control = funres_control(n_sim = 300, itermax = 10, NP = 20,
+#'                                            n_reeval = 2),
 #'                   extend_z = FALSE, time_unit = "h")
 #' fit
 #' }
@@ -700,8 +712,6 @@ fit_funres <- function(data, T, model = funres_model(),
     notes <- c(notes, paste0(
       "The optimizer was still improving in the last quarter of the run (by ",
       round(prof$late_gain[i_best], 2), " NLL units): increase itermax."))
-  if (fit$control$preset == "exploratory")
-    notes <- c(notes, "Exploratory settings: do not report these results without a fit with the standard or final settings.")
   notes
 }
 
@@ -762,7 +772,7 @@ fit_profile <- function(data_spp, T_exp, z_grid, n_sim = 3000, itermax = 50,
                         NP = 40, reltol = 1e-2, n_reeval = 3L,
                         extend_z = TRUE, z_extend = c(0.1, 0.25, 8, 10, 15, 20),
                         refine = TRUE, model = funres_model(), bounds = list()) {
-  ctrl <- funres_control("exploratory", n_sim = n_sim, itermax = itermax, NP = NP,
+  ctrl <- funres_control(n_sim = n_sim, itermax = itermax, NP = NP,
                          n_reeval = n_reeval, bounds = bounds)
   f <- fit_funres(data_spp, T_exp, model = model, z_grid = z_grid, control = ctrl,
                   extend_z = extend_z, z_extend = z_extend, refine = refine)

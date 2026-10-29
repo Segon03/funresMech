@@ -55,7 +55,7 @@ search bounds" reports any estimate that is still on a bound. Bounds can also
 be set by the user, in natural units:
 
 ```{r bounds}
-ctrl <- funres_control("standard", bounds = list(h = c(0.01, 5), k = c(0.01, 50)))
+ctrl <- funres_control(bounds = list(h = c(0.01, 5), k = c(0.01, 50)))
 ```
 
 ## The grid of z

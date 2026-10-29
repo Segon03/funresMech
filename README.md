@@ -70,7 +70,7 @@ screen_outliers(d, T = 24)               # check for atypical trials first
 set.seed(1)
 fit <- fit_funres(d, T = 24, time_unit = "h",
                   model = funres_model(),             # Gamma search, lognormal handling
-                  control = funres_control("standard"))
+                  control = funres_control())     # documented defaults
 fit                                      # estimates, interval of z, AIC, reliability
 fit <- verify_fit(fit)                   # independent runs, more effort, wider bounds
 reliability(fit)                         # report only when no check fails
@@ -85,17 +85,17 @@ funresMech::run_app()
 ## Choosing the computational effort
 
 The likelihood is approximated by simulation, so fits take minutes to hours.
-Three presets are available in `funres_control()`:
-
-| Preset | Simulations per density | Generations | Use |
-|---|---|---|---|
-| `exploratory` | 2,000 | 50 | First look at the data. Not for reporting. |
-| `standard` (default) | 5,000 | 100 | Results to be reported, after `verify_fit()`. |
-| `final` | 10,000 | 200 | Highest precision. |
+All settings of `funres_control()` have documented defaults and can be
+changed: simulated trials per density (`n_sim`, default 5,000), generations
+(`itermax`, 100) and population (`NP`, 40) of differential evolution,
+re-evaluations at each optimum (`n_reeval`, 5), search bounds and others.
+The effort a dataset needs depends on the data and the model; the
+reliability checks say whether it was enough.
 
 As a guide, with about 60 trials at 8 to 13 densities and the profile
-evaluated in parallel on 8 processor cores, an exploratory fit takes tens of
-minutes, a standard fit about one to two hours and a final fit several hours.
+evaluated in parallel on 8 processor cores, a fit with `n_sim = 2000` and
+`itermax = 50` takes tens of minutes, a fit with the defaults about one to
+two hours, and a fit with `n_sim = 10000` and `itermax = 200` several hours.
 Use `future::plan(future::multisession)` before `fit_funres()` to evaluate the
 profile in parallel.
 
@@ -108,7 +108,7 @@ and *h* were unbiased, and the 95% interval of *z* contained the true value in
 91% of the fits (95% confidence interval 87% to 94%). The interval is
 therefore slightly narrower than nominal, mostly when search times are highly
 variable, and its coverage reached 94% with 13 host densities. With the
-standard preset, the checks in `reliability()` gave false alarms in at most 6%
+default settings, the checks in `reliability()` gave false alarms in at most 6%
 of the fits. Further simulations examined misspecified models, optimizers and
 computational budgets. See the
 vignette *How reliable is my fit?* and the `validation/` folder of the

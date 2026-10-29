@@ -70,7 +70,7 @@ NULL
 }
 
 .app_control <- function(o) {
-  funres_control(o$preset, n_sim = o$n_sim, itermax = o$itermax, NP = o$NP,
+  funres_control(n_sim = o$n_sim, itermax = o$itermax, NP = o$NP,
                  n_reeval = o$n_reeval, method = o$method,
                  bounds = .app_bounds(o), crn = isTRUE(o$crn),
                  polish = if (isTRUE(o$polish)) 200L else 0L,
@@ -321,8 +321,8 @@ theme_void_like <- function() {
     sprintf("model <- funres_model(search = search, handling = handling, process = %s%s%s)",
             dq(o$process), if (length(fix)) paste0(", fix = list(", paste(fix, collapse = ", "), ")") else "",
             if (identical(o$unfinished, "exclude")) ', unfinished = "exclude"' else ""),
-    sprintf("control <- funres_control(%s, n_sim = %d, itermax = %d, NP = %d, n_reeval = %d, method = %s%s%s%s%s)",
-            dq(o$preset), as.integer(o$n_sim), as.integer(o$itermax), as.integer(o$NP),
+    sprintf("control <- funres_control(n_sim = %d, itermax = %d, NP = %d, n_reeval = %d, method = %s%s%s%s%s)",
+            as.integer(o$n_sim), as.integer(o$itermax), as.integer(o$NP),
             as.integer(o$n_reeval), dq(o$method),
             if (length(b)) paste0(", bounds = ", dq(b)) else "",
             if (isTRUE(o$crn)) "" else ", crn = FALSE",

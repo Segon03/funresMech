@@ -53,8 +53,8 @@ N_PRECISE <- if (QUICK) 2000L else 20000L
 N_PRED <- if (QUICK) 2000L else 20000L          # simulated trials per density for the predicted distribution
 
 control_for <- function(preset, ...) {
-  if (QUICK) funres_control(preset, n_sim = 200, itermax = 5, NP = 12, n_reeval = 2, ...)
-  else funres_control(preset, ...)
+  if (QUICK) effort_control(preset, n_sim = 200, itermax = 5, NP = 12, n_reeval = 2, ...)
+  else effort_control(preset, ...)
 }
 
 # ---- scenarios -------------------------------------------------------------------
@@ -174,7 +174,7 @@ run_one <- function(job) {
 
 run_jobs(pending, run_one,
          globals = mget(c("run_one", "pending", "SCEN", "DESIGNS", "T_EXP", "GRID", "N_PRECISE", "N_PRED",
-                          "QUICK", "control_for", "mean_parameters", "true_mean", "true_pmf",
+                          "QUICK", "control_for", "EFFORT", "effort_control", "mean_parameters", "true_mean", "true_pmf",
                           "simulate_phenomenological", "fit_generating", "generating_pmf",
                           "data_seed", "fit_seed", "SEEDS_DATA", "SEEDS_FIT", "precise_nll", "lighten",
                           "fit_row", "checks_long")),

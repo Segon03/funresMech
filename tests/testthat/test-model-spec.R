@@ -56,7 +56,7 @@ test_that("funres_sampler() and test_sampler() check user samplers", {
 
 test_that("fit_funres() fits every family, fixed parameters and both processes", {
   skip_on_cran()
-  ctrl <- funres_control("exploratory", n_sim = 150, itermax = 6, NP = 12, n_reeval = 2)
+  ctrl <- funres_control(n_sim = 150, itermax = 6, NP = 12, n_reeval = 2)
   models <- list(funres_model(),
                  funres_model(search = "weibull", handling = "gamma"),
                  funres_model(search = "exponential", handling = "constant"),
@@ -82,7 +82,7 @@ test_that("fit_funres() fits every family, fixed parameters and both processes",
 
 test_that("fit_funres() is reproducible with set.seed() and validates input", {
   skip_on_cran()
-  ctrl <- funres_control("exploratory", n_sim = 150, itermax = 5, NP = 12, n_reeval = 2)
+  ctrl <- funres_control(n_sim = 150, itermax = 5, NP = 12, n_reeval = 2)
   f <- function() suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2),
                                               control = ctrl, extend_z = FALSE))
   set.seed(4); f1 <- f()
@@ -129,7 +129,7 @@ test_that("a search bound hit at the optimum is widened automatically", {
   base <- list(test_data, 24, z_grid = c(1, 2), extend_z = FALSE, refine = FALSE)
   # upper bound of lambda: 0.05 per h -> 1.2 encounters per trial (hit);
   # after one widening x10 -> 12 (not hit)
-  ctrl <- funres_control("exploratory", bounds = list(lambda = c(1e-4, 0.05)),
+  ctrl <- funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, bounds = list(lambda = c(1e-4, 0.05)),
                          widen = 1, bb = FALSE)
   f <- do.call(fit_funres, c(base, list(control = ctrl)))
   expect_true("lambda(upper)" %in% f$widened)
@@ -137,7 +137,7 @@ test_that("a search bound hit at the optimum is widened automatically", {
   expect_false(any(f$profile$at_bound))
   expect_true(any(grepl("widened automatically", f$notes)))
 
-  ctrl0 <- funres_control("exploratory", bounds = list(lambda = c(1e-4, 0.05)),
+  ctrl0 <- funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, bounds = list(lambda = c(1e-4, 0.05)),
                           widen = 0, bb = FALSE)
   f0 <- do.call(fit_funres, c(base, list(control = ctrl0)))
   expect_length(f0$widened, 0)
@@ -170,15 +170,15 @@ test_that("observed outcomes never simulated are counted and flagged", {
 
 test_that("reliability() and verify_fit() report the checks with a status", {
   skip_on_cran()
-  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12, n_reeval = 3)
+  ctrl <- funres_control(n_sim = 200, itermax = 8, NP = 12, n_reeval = 3)
   set.seed(7)
   f <- suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2), control = ctrl,
                                    extend_z = FALSE, refine = FALSE))
   r <- reliability(f)
   expect_s3_class(r, "funres_reliability")
   expect_true(all(r$status %in% c("ok", "warning", "fail")))
-  expect_true("Settings suitable for reporting" %in% r$check)
-  expect_true(attr(r, "overall") %in% c("warning", "fail"))   # exploratory
+  expect_false("Settings suitable for reporting" %in% r$check)   # check removed with the presets
+  expect_true(attr(r, "overall") %in% c("ok", "warning", "fail"))
   set.seed(8)
   v <- suppressWarnings(verify_fit(f, n_runs = 1, effort = 1.5))
   rv <- reliability(v)
@@ -216,7 +216,7 @@ test_that("Beta-Binomial reference reproduces the NLL implied by Okuyama (2026, 
 
 test_that("joint estimation of z with an adaptive profile for the interval", {
   skip_on_cran()
-  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 15,
+  ctrl <- funres_control(n_sim = 200, itermax = 8, NP = 15,
                          n_reeval = 2, bb = FALSE)
   set.seed(9)
   f <- suppressWarnings(fit_funres(test_data, 24, control = ctrl, z_method = "joint",
@@ -232,6 +232,17 @@ test_that("joint estimation of z with an adaptive profile for the interval", {
   expect_equal(r$status[r$check == "Estimation of z by the validated method"], "warning")
 })
 
+test_that("funres_control() has documented defaults and no presets", {
+  ctl <- funres_control()
+  expect_equal(c(ctl$n_sim, ctl$itermax, ctl$NP, ctl$n_reeval), c(5000L, 100L, 40L, 5L))
+  expect_equal(ctl$steptol, 100L)
+  expect_equal(funres_control(itermax = 30)$steptol, 30L)
+  expect_null(ctl$preset)
+  expect_error(funres_control("exploratory"), "Presets were removed")
+  expect_error(funres_control(itermax = 0), "itermax")
+  expect_output(print(ctl), "n_sim = 5000")
+})
+
 test_that("defaults chosen in the phase 4 comparison: DEoptim + common random numbers + polish", {
   ctl <- funres_control()
   expect_equal(ctl$method, "DEoptim")
@@ -244,13 +255,13 @@ test_that("alternative optimizers, common random numbers and polish run", {
   base <- list(test_data, 24, z_grid = 1.5, extend_z = FALSE, refine = FALSE)
   for (meth in c("CMAES", "CRS2")) {
     skip_if_not_installed(if (meth == "CMAES") "cmaes" else "nloptr")
-    ctrl <- funres_control("exploratory", n_sim = 200, itermax = 8, NP = 12,
+    ctrl <- funres_control(n_sim = 200, itermax = 8, NP = 12,
                            n_reeval = 2, method = meth, bb = FALSE)
     set.seed(10)
     f <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
     expect_true(is.finite(f$nll))
   }
-  ctrl <- funres_control("exploratory", n_sim = 200, itermax = 6, NP = 12,
+  ctrl <- funres_control(n_sim = 200, itermax = 6, NP = 12,
                          n_reeval = 2, crn = TRUE, polish = 30, bb = FALSE)
   set.seed(11)
   f <- suppressWarnings(do.call(fit_funres, c(base, list(control = ctrl))))
@@ -263,7 +274,7 @@ test_that("alternative optimizers, common random numbers and polish run", {
 
 test_that("a jagged profile (extra local minima) fails the regularity check", {
   skip_on_cran()
-  ctrl <- funres_control("exploratory", n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
+  ctrl <- funres_control(n_sim = 150, itermax = 4, NP = 12, n_reeval = 2, bb = FALSE)
   set.seed(1)
   f <- suppressWarnings(fit_funres(test_data, 24, z_grid = c(1, 2), control = ctrl,
                                    extend_z = FALSE, refine = FALSE))
@@ -292,7 +303,7 @@ test_that("an open lower limit of z extends the grid downwards", {
   }
   old <- future::plan(future::sequential)
   on.exit(future::plan(old), add = TRUE)
-  ctrl <- funres_control("exploratory", widen = 0, bb = FALSE)
+  ctrl <- funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, widen = 0, bb = FALSE)
   base <- list(test_data, 24, z_grid = c(0.5, 1, 1.5), refine = FALSE, control = ctrl)
 
   # minimum at the lowest grid value; crosses the threshold between 0.1 and 0.25

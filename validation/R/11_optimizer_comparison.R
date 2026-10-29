@@ -55,8 +55,8 @@ N_RUNS <- if (QUICK) 1 else 3
 
 model <- funres_model()
 ctrl_base <- if (QUICK) {
-  funres_control("exploratory", n_sim = 300, itermax = 6, NP = 12, n_reeval = 2, bb = FALSE)
-} else funres_control("exploratory", bb = FALSE)
+  funres_control(n_sim = 300, itermax = 6, NP = 12, n_reeval = 2, bb = FALSE)
+} else funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, bb = FALSE)
 STRATEGIES <- list(
   DEoptim            = list(method = "DEoptim"),
   CMAES              = list(method = "CMAES"),

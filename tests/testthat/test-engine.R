@@ -326,7 +326,7 @@ test_that(".ci_profile() leaves out the points at the probability floor", {
 })
 
 test_that("floor_retry repeats the re-evaluations with more simulations when the floor is hit", {
-  ctrl0 <- funres_control("exploratory", floor_retry = 0)
+  ctrl0 <- funres_control(n_sim = 2000, itermax = 50, n_reeval = 3, floor_retry = 0)
   expect_equal(ctrl0$floor_retry, 0L)
   expect_equal(funres_control()$floor_retry, 2L)
   calls <- integer(0)
@@ -338,7 +338,7 @@ test_that("floor_retry repeats the re-evaluations with more simulations when the
   }
   testthat::local_mocked_bindings(.nll_sim = fake_nll, .package = "funresMech")
   d <- data.frame(dens = rep(c(5, 10), each = 3), par = c(1, 2, 2, 3, 4, 4))
-  ctrl <- funres_control("exploratory", n_sim = 300, itermax = 3, NP = 8, n_reeval = 2, polish = 0)
+  ctrl <- funres_control(n_sim = 300, itermax = 3, NP = 8, n_reeval = 2, polish = 0)
   p <- funresMech:::.fit_point(1.5, d, 24, funres_model(), ctrl, funresMech:::.make_bounds(list(), 24),
                                funresMech:::.h_ref(d))
   expect_equal(p$n_floor, 0L)
@@ -362,7 +362,7 @@ test_that(".fit_point() returns the expected structure", {
   # small itermax and NP: CRAN limits the check time.
   set.seed(42)
   m <- funresMech::funres_model()
-  ctrl <- funresMech::funres_control("exploratory", n_sim = 100, itermax = 10,
+  ctrl <- funresMech::funres_control(n_sim = 100, itermax = 10,
                                      NP = 20, n_reeval = 2)
   fit <- suppressWarnings(funresMech:::.fit_point(
     z = 1, data_spp = small_data, T_exp = 1, model = m, ctrl = ctrl,
@@ -465,7 +465,7 @@ test_that(".workers_ok() is TRUE under a sequential plan", {
 test_that("the complete fit does not depend on the time unit (hours versus minutes)", {
   d <- data.frame(dens = rep(c(3, 6, 12, 24), each = 4),
                   par  = c(0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 6, 7, 6, 8, 10, 12))
-  ctrl <- funres_control("exploratory", n_sim = 300, itermax = 6, NP = 12, n_reeval = 2,
+  ctrl <- funres_control(n_sim = 300, itermax = 6, NP = 12, n_reeval = 2,
                          polish = 20, bb = FALSE, widen = 0)
   fit_in <- function(T) {
     set.seed(123)

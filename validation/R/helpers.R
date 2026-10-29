@@ -45,6 +45,15 @@ generating_model <- function(e) switch(e$generating_model,
   predator         = funres_model(process = "predator"),
   funres_model())
 
+# Computing effort of the fits. The package has no presets: these are the
+# explicit settings used in the validation runs, labelled as in the seed
+# tables ("exploratory" = lower effort, "standard" = the defaults of
+# funres_control(), "final" = the settings of Okuyama 2026).
+EFFORT <- list(exploratory = list(n_sim = 2000L, itermax = 50L, NP = 40L, n_reeval = 3L),
+               standard    = list(n_sim = 5000L, itermax = 100L, NP = 40L, n_reeval = 5L),
+               final       = list(n_sim = 10000L, itermax = 200L, NP = 40L, n_reeval = 5L))
+effort_control <- function(level, ...) do.call(funres_control, utils::modifyList(EFFORT[[level]], list(...)))
+
 SEEDS_DATA <- utils::read.csv(file.path("validation", "data", "seeds_datasets.csv"), stringsAsFactors = FALSE)
 SEEDS_FIT  <- utils::read.csv(file.path("validation", "data", "seeds_fits.csv"), stringsAsFactors = FALSE)
 

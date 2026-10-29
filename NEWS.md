@@ -37,8 +37,8 @@ reproduces version 1.1.0 exactly with the same random seed.
 
 ## Estimation
 
-* New `fit_funres()` with `funres_control()`. Three presets: `"exploratory"`
-  (not for reporting), `"standard"` (default) and `"final"`.
+* New `fit_funres()` with `funres_control()`, where every setting of the
+  simulation and the optimizer has a documented default and can be changed.
 * Default optimizer: differential evolution with common random numbers and a
   Nelder-Mead polish, chosen in a comparison of strategies with equal budgets
   on simulated data. CMA-ES (`method = "CMAES"`, package 'cmaes') and CRS2
@@ -73,12 +73,19 @@ reproduces version 1.1.0 exactly with the same random seed.
 * New `reliability()`: checks of Monte Carlo noise, the gap between the
   optimizer value and the re-evaluated likelihood, convergence, search
   bounds, the regularity of the profile, open intervals, extreme search
-  dispersion and the preset, each with a status and a recommended action.
+  dispersion, each with a status and a recommended action.
 * New `verify_fit()`: independent runs, a run with more effort and a run with
   wider bounds at the estimate of `z`.
 * New exported `screen_outliers()`: leave-one-out screening for atypical
   trials. Data are never removed.
 * New `simulate_response()`: simulated experiments under any model.
+
+## Settings of the fit
+
+* `funres_control()` has no presets: earlier development builds offered
+  "exploratory", "standard" and "final", which were removed because the effort
+  a dataset needs depends on the data and the model. Passing one of these
+  names gives an error that shows how to set the values directly.
 
 ## Figures
 
@@ -93,8 +100,8 @@ reproduces version 1.1.0 exactly with the same random seed.
 ## Interactive application
 
 * Model specification panel (distributions, user samplers with a test
-  button, process, fixed parameters), time unit selector, presets with an
-  estimate of the run time, random seed, and editable search bounds.
+  button, process, fixed parameters), time unit selector, editable
+  simulation and optimization settings with an estimate of the run time, random seed, and editable search bounds.
 * Reliability tab with the checks and a "Run verification" button; a
   permanent notice is shown while a fit is not verified.
 * Model comparison table, downloads of estimates, profiles, checks and fitted
@@ -103,8 +110,8 @@ reproduces version 1.1.0 exactly with the same random seed.
 
 ## Changes that alter results
 
-* The default preset is `"standard"` (5,000 simulations per density,
-  100 generations, 5 re-evaluations).
+* The default settings are 5,000 simulations per density, 100 generations of
+  a population of 40, and 5 re-evaluations at each optimum.
 * The default grid of `z` is 0.5 to 5 in steps of 0.25, with automatic
   extension and refinement.
 

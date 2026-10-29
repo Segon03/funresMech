@@ -54,8 +54,8 @@ control_for <- function(preset, ...) {
   if (QUICK) {
     p <- switch(preset, exploratory = list(n_sim = 200, itermax = 5),
                 standard = list(n_sim = 300, itermax = 8), final = list(n_sim = 400, itermax = 10))
-    funres_control(preset, n_sim = p$n_sim, itermax = p$itermax, NP = 12, n_reeval = 2, ...)
-  } else funres_control(preset, ...)
+    effort_control(preset, n_sim = p$n_sim, itermax = p$itermax, NP = 12, n_reeval = 2, ...)
+  } else effort_control(preset, ...)
 }
 
 # ---- scenarios -----------------------------------------------------------------
@@ -145,7 +145,7 @@ run_one <- function(job) {
 n_final <- sum(pending$arm == "D2_D3_final")
 run_jobs(pending, run_one,
          globals = mget(c("run_one", "pending", "SCEN", "DESIGNS", "T_EXP", "GRID", "GRID_FINAL", "N_PRECISE",
-                          "WORKERS_FINAL", "QUICK", "control_for", "true_parameters", "simulate_dataset",
+                          "WORKERS_FINAL", "QUICK", "control_for", "EFFORT", "effort_control", "true_parameters", "simulate_dataset",
                           "generating_model", "data_seed", "fit_seed", "SEEDS_DATA", "SEEDS_FIT", "read_published",
                           "precise_nll", "lighten", "fit_row", "checks_long")),
          workers = max(1L, WORKERS - n_final * (WORKERS_FINAL - 1L)),

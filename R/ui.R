@@ -216,9 +216,7 @@ ui <- function() {
             ),
             bslib::accordion_panel(
               "Optimization",
-              selectInput("preset", .lab("Preset", "Exploratory: a quick first look, not for reporting. Standard: default. Final: the settings used in published analyses with this method (10000 simulations, 200 generations). Values below can be edited."),
-                          c("Exploratory" = "exploratory", "Standard" = "standard", "Final" = "final"),
-                          selected = "standard"),
+              p(class = "muted", "Defaults: 5000 simulated trials per density, 100 generations, population 40, 5 re-evaluations. The effort a dataset needs depends on the data and the model: check every fit with the reliability checks and the verification, and report the settings used."),
               div(class = "row g-2",
                   div(class = "col-6", numericInput("n_sim", .lab("n_sim", "Simulated trials per density for each evaluation of the likelihood. More = less Monte Carlo noise."), 5000, min = 100, step = 500)),
                   div(class = "col-6", numericInput("n_reeval", .lab("Re-evaluations", "Fresh evaluations of the likelihood at each optimum; their mean is used for the profile and the interval."), 5, min = 1))),
@@ -396,7 +394,7 @@ ui <- function() {
       tags$h6("The model"),
       p("The likelihood of each observed count is the frequency of that count in trials simulated from the foraging process (Okuyama 2012, 2026): a consumer alternates search, with mean time 1/(a x^z) at density x, and handling, with mean time h, until the trial duration T is reached. z = 1 gives a type II response and z > 1 a type III response. The distributions of search and handling times are assumptions; no family is correct by default, and the application lets you choose them, write your own and compare the fits."),
       tags$h6("Defaults are a starting point"),
-      p("A simulated likelihood is noisy and the optimizer can stop at a suboptimal point. The exploratory preset is for a first look only. Report results only from fits whose checks pass, preferably verified, and state the settings used.")
+      p("A simulated likelihood is noisy and the optimizer can stop at a suboptimal point. Cheap settings (fewer simulations and generations) are useful to explore a dataset. Report results only from fits whose checks pass, preferably verified, and state the settings used.")
     ),
     bslib::card(
       bslib::card_header("Reading the reliability checks"),
@@ -408,7 +406,7 @@ ui <- function() {
           tags$tr(tags$td("Large Monte Carlo SE or optimizer gap"), tags$td("Too few simulated trials"), tags$td("Increase n_sim")),
           tags$tr(tags$td("Still improving at the end of the run"), tags$td("Too few generations"), tags$td("Increase generations and population")),
           tags$tr(tags$td("Independent runs disagree"), tags$td("Optimizer stops at different points"), tags$td("More effort; do not report until runs agree")),
-          tags$tr(tags$td("More effort or wider bounds improve the optimum"), tags$td("Settings insufficient"), tags$td("Refit the whole profile with the final preset or wider bounds")),
+          tags$tr(tags$td("More effort or wider bounds improve the optimum"), tags$td("Settings insufficient"), tags$td("Refit the whole profile with more simulations and generations, or wider bounds")),
           tags$tr(tags$td("Profile of z with several minima"), tags$td("The optimizer failed at some values of z"), tags$td("Increase generations, population and n_sim; do not use the interval until the profile is regular")),
           tags$tr(tags$td("Open interval of z"), tags$td("The data do not bound z on that side (often with very small k)"), tags$td("Extend the grid; check atypical trials; report the limit as open")),
           tags$tr(tags$td("Very small k"), tags$td("Very irregular search, ridge between z, a and k"), tags$td("Check atypical trials; compare with k fixed (exponential search) by AIC"))

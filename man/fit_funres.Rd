@@ -100,8 +100,8 @@ d <- data.frame(dens = rep(c(2, 5, 10, 20), each = 4),
                 par  = c(0, 1, 1, 2, 2, 3, 3, 4, 5, 6, 6, 7, 8, 9, 10, 12))
 set.seed(1)
 fit <- fit_funres(d, T = 24, z_grid = c(0.5, 1, 2),
-                  control = funres_control("exploratory", n_sim = 300,
-                                           itermax = 10, NP = 20),
+                  control = funres_control(n_sim = 300, itermax = 10, NP = 20,
+                                           n_reeval = 2),
                   extend_z = FALSE, time_unit = "h")
 fit
 }

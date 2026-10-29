@@ -123,10 +123,6 @@ reliability <- function(fit) {
     rows$joint <- .rel_row("Estimation of z by the validated method", "warning", NA_real_,
                            "joint estimation of z (experimental)",
                            "In validation the joint method under-covered the true z (67% vs 96% for the profile); confirm z and its interval with z_method = 'profile'.")
-  if (fit$control$preset == "exploratory")
-    rows$preset <- .rel_row("Settings suitable for reporting", "warning", NA_real_,
-                            "exploratory preset",
-                            "Refit with funres_control('standard') or 'final' before reporting.")
   if (!is.null(fit[["verification"]])) rows <- c(rows, list(fit[["verification"]]))
 
   out <- do.call(rbind, rows)
@@ -219,7 +215,7 @@ verify_fit <- function(fit, n_runs = 2, effort = 2, bounds_factor = 10) {
     .rel_row("More effort does not improve the optimum",
              if (gain_hi > th$better_fail) "fail" else "ok", gain_hi,
              sprintf("NLL improvement with %gx effort = %.2f", effort, gain_hi),
-             if (gain_hi > th$better_fail) "The settings were insufficient: refit the whole profile with more effort (preset 'final')." else ""),
+             if (gain_hi > th$better_fail) "The settings were insufficient: refit the whole profile with more effort (larger n_sim and itermax)." else ""),
     .rel_row("Wider bounds do not improve the optimum",
              if (gain_wd > th$better_fail) "fail" else "ok", gain_wd,
              sprintf("NLL improvement with bounds %gx wider = %.2f", bounds_factor, gain_wd),
