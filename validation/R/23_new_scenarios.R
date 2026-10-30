@@ -127,6 +127,7 @@ if (length(O)) {
   G <- do.call(rbind, lapply(O, function(o)
     data.frame(o$job, o$res, seconds = o$seconds, SCEN[SCEN$id == o$job$scenario, info], row.names = NULL)))
   G$process <- ifelse(G$generating_model == "predator", "predator", "parasitoid")
+  G$excludes_1 <- excludes_one(G$z_low, G$z_high)
   G$deficit <- G$nll_precise_hat - G$nll_precise_true
   G$optimization_failure <- G$deficit > 1
   G$open <- G$low_open | G$high_open

@@ -187,6 +187,7 @@ if (length(O)) {
     data.frame(o$job, o$res, seconds = o$seconds,
                SCEN[SCEN$id == o$job$scenario, c("z", "rho", "distribution", "h_over_T", "E", "design")],
                row.names = NULL)))
+  G$excludes_1 <- excludes_one(G$z_low, G$z_high)
   G$h_ratio <- G$h_hat / (G$h_over_T * T_EXP)
   G$z_error <- G$z_hat - G$z
   G$open <- G$low_open | G$high_open

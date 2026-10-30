@@ -267,6 +267,7 @@ for (st in STUDIES) {
 }
 M <- merge(M, unique(R[, c("source", "scenario", "dataset", "process", "z", "a_true", "h_true", "k", "s_over_h",
                            "h_over_T", "E", "design", "n_trials")]))
+M$excludes_1 <- excludes_one(M$z_low, M$z_high)
 M$mean <- "mechanistic"; M$error <- "simulation"; M$rho_hat <- NA_real_
 M$objective <- M$nll_precise_hat; M$nll <- M$nll_precise_hat; M$n_par <- 5L; M$p_z1 <- NA_real_
 M$nll_precise_hat <- NULL

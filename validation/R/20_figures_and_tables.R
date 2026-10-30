@@ -113,6 +113,7 @@ save_fig(g1, "Fig1", 7.0, 4.6)
 
 # ---- Fig 2 and Table 1: simulation study ---------------------------------------
 G <- rd("simulation_study_fits.csv")
+G$excludes_1 <- (!is.na(G$z_low) & G$z_low > 1) | (!is.na(G$z_high) & G$z_high < 1)  # both directions
 G$true_z <- factor(G$z)
 cov <- do.call(rbind, lapply(split(G, list(G$arm, G$z), drop = TRUE), function(q) {
   w <- wilson(q$covers)

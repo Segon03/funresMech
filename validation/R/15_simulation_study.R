@@ -100,6 +100,7 @@ if (length(O)) {
   G <- do.call(rbind, lapply(O, function(o)
     cbind(o$job, o$res, seconds = o$seconds,
           SCEN[SCEN$id == o$job$scenario, c("z", "k", "s_over_h", "h_over_T", "E", "design", "block")])))
+  G$excludes_1 <- excludes_one(G$z_low, G$z_high)
   G$deficit <- G$nll_precise_hat - G$nll_precise_true
   G$optimization_failure <- G$deficit > 1
   G$open <- G$low_open | G$high_open

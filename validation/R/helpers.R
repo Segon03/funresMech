@@ -43,7 +43,32 @@ generating_model <- function(e) switch(e$generating_model,
   search_lognormal = funres_model(search = "lognormal"),
   handling_gamma   = funres_model(handling = "gamma"),
   predator         = funres_model(process = "predator"),
+  predator_handling_gamma = funres_model(handling = "gamma", process = "predator"),
+  handling_tnorm   = funres_model(handling = tnorm_sampler(e$s_over_h)),
+  predator_handling_tnorm = funres_model(handling = tnorm_sampler(e$s_over_h), process = "predator"),
   funres_model())
+
+# Normal handling times truncated at zero (24_handling_distribution.R). The
+# sampler draws N(1, shape^2) truncated at 0 by inversion and divides by the
+# mean of that truncated distribution, so the handling time has mean h. Its
+# CV is below about 0.76 (the half-normal limit). tnorm_sampler(cv) returns
+# the sampler with the shape fixed at the value that gives that CV;
+# tnorm_sampler() leaves the shape free, for fitting.
+tnorm_mean <- function(sg) 1 + sg * stats::dnorm(1 / sg) / stats::pnorm(1 / sg)
+tnorm_cv <- function(sg) {
+  al <- -1 / sg; la <- stats::dnorm(al) / (1 - stats::pnorm(al))
+  sqrt(sg^2 * (1 + al * la - la^2)) / tnorm_mean(sg)
+}
+tnorm_draw <- function(n, shape) {
+  x <- 1 + shape * stats::qnorm(stats::runif(n, stats::pnorm(-1 / shape), 1))
+  x / (1 + shape * stats::dnorm(1 / shape) / stats::pnorm(1 / shape))
+}
+tnorm_sampler <- function(cv = NULL) {
+  if (is.null(cv)) return(funres_sampler(tnorm_draw, lower = 0.01, upper = 20, name = "truncated normal"))
+  if (cv >= 0.75) stop("A normal truncated at zero cannot have CV >= 0.75.")
+  sg <- stats::uniroot(function(s) tnorm_cv(s) - cv, c(1e-3, 50), tol = 1e-10)$root
+  funres_sampler(tnorm_draw, fixed = sg, name = "truncated normal")
+}
 
 # Computing effort of the fits. The package has no presets: these are the
 # explicit settings used in the validation runs, labelled as in the seed
@@ -105,13 +130,18 @@ precise_nll <- function(par, model, d, n = N_PRECISE) {
 # Fitted objects without the verification runs, to save disk space.
 lighten <- function(f) { f$verification_runs <- NULL; f$joint <- NULL; f }
 
+# The interval of z excludes 1 in either direction (z > 1 or z < 1). Before
+# 2026-10-30, fit_row() counted only intervals above 1, so the tables of the
+# simulation-based fits recompute this column from z_low and z_high.
+excludes_one <- function(z_low, z_high) (!is.na(z_low) & z_low > 1) | (!is.na(z_high) & z_high < 1)
+
 fit_row <- function(f, z_true = NA_real_) {
   ci <- f$ci; p <- f$par; pr <- f$profile
   data.frame(z_hat = p[["z"]], a_hat = p[["a"]], h_hat = p[["h"]], k_hat = p[["k"]],
              s_hat = p[["s"]], z_low = ci$z_low, z_high = ci$z_high,
              low_open = ci$low_censored, high_open = ci$high_censored,
              covers = (is.na(ci$z_low) || ci$z_low <= z_true) && (is.na(ci$z_high) || z_true <= ci$z_high),
-             excludes_1 = !is.na(ci$z_low) && ci$z_low > 1,
+             excludes_1 = excludes_one(ci$z_low, ci$z_high),
              nll = f$nll, nll_se = f$nll_se, dAIC_z1 = f$aic$delta_AIC,
              dAIC_BB = f$aic$delta_AIC_BB, n_points = nrow(pr),
              floor_points = sum(pr$n_floor > 0, na.rm = TRUE),

@@ -32,6 +32,7 @@ auc <- function(x, y) {
 }
 
 G <- read.csv(file.path(DIR_TAB, "simulation_study_fits.csv"), stringsAsFactors = FALSE)
+G$excludes_1 <- excludes_one(G$z_low, G$z_high)
 C <- read.csv(file.path(DIR_TAB, "simulation_study_checks.csv"), stringsAsFactors = FALSE)
 G$miss_side <- ifelse(G$covers, "covers", ifelse(!is.na(G$z_low) & G$z < G$z_low, "true z below the interval",
                                                  "true z above the interval"))
