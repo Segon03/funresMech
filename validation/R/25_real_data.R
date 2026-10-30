@@ -74,10 +74,15 @@ me <- utils::read.csv(f_meta, check.names = FALSE, stringsAsFactors = FALSE, enc
 me <- me[, !duplicated(names(me))]; names(me)[1] <- "id"
 me <- me[!is.na(me$id), ]
 
+# Trial durations missing in FoRAGE, taken from the original article
+T_FROM_SOURCE <- c("2513" = 2, "2514" = 2, "2515" = 2, "2516" = 2, "2517" = 2, "2518" = 2, "2519" = 2)
+# Broom et al. 2021 Environ Biol Fish 104: 797-810: "T is the individual trial duration (i.e. 2 h)"
+
 screen_curve <- function(g) {
   x <- suppressWarnings(as.numeric(g[["Original x"]])); y <- suppressWarnings(as.numeric(g[["Original y"]]))
   m <- me[me$id == g$id[1], ]
   Tn <- suppressWarnings(as.numeric(g[["Trial duration (h)"]][1]))
+  if (!is.finite(Tn) && as.character(g$id[1]) %in% names(T_FROM_SOURCE)) Tn <- T_FROM_SOURCE[[as.character(g$id[1])]]
   int <- all(is.finite(x) & is.finite(y)) && all(abs(y - round(y)) < 1e-6) && all(abs(x - round(x)) < 1e-6)
   reason <- c(
     I1 = g[["Rate is"]][1] != "Point",
