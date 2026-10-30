@@ -55,9 +55,19 @@ WORKERS <- if (QUICK) 2L else max(1L, parallel::detectCores() - 1L)
 DIR_TAB <- file.path("validation", "tables")
 SUFFIX <- if (QUICK) "_quick" else ""
 
+# Datasets: the parasitoid simulation study (core, dense and extended range) and,
+# when they have been run, the studies of 23_new_scenarios.R (parasitoid with
+# z = 0.5, predator process).
+STUDIES <- c("parasitoid_z05", "predator")
 D <- utils::read.csv(file.path("validation", "data", "simulated_datasets_parasitoid.csv"), stringsAsFactors = FALSE)
+for (st in STUDIES) {
+  f <- file.path("validation", "data", paste0("simulated_datasets_", st, if (QUICK) "_quick", ".csv"))
+  if (file.exists(f)) D <- rbind(D, utils::read.csv(f, stringsAsFactors = FALSE))
+}
 keys <- unique(D[, c("source", "scenario", "dataset")])
-if (QUICK) keys <- keys[c(1, 200, 300, 350, 400, 432), ]
+if (QUICK) keys <- do.call(rbind, lapply(split(keys, keys$source), function(k) k[unique(c(1, nrow(k))), ]))
+rownames(keys) <- NULL
+cat("Datasets by source:\n"); print(table(keys$source))
 
 # ---- mean functions (time in units of T) ------------------------------------------
 # Principal branch of the Lambert W function from the log of its argument
@@ -182,7 +192,8 @@ analyse <- function(d, mean_name, error, z_true) {
 scenario_of <- function(id) {
   p <- regmatches(id, regexec("z([0-9.]+)_k([0-9.]+)_sh([0-9.]+)_hT([0-9.]+)_E([0-9.]+)_([a-z]+)$", id))[[1]]
   e <- scenario(z = as.numeric(p[2]), k = as.numeric(p[3]), s_over_h = as.numeric(p[4]),
-                h_over_T = as.numeric(p[5]), E = as.numeric(p[6]), design = p[7])
+                h_over_T = as.numeric(p[5]), E = as.numeric(p[6]), design = p[7],
+                generating_model = sub("_z[0-9.]+_.*$", "", id))
   e$id <- id
   e
 }
@@ -196,7 +207,8 @@ run_key <- function(i, means = names(MEANS)) {
   set.seed(1000 + i)
   out <- do.call(rbind, lapply(means, function(m) do.call(rbind, lapply(c("binomial", "bb", "ls"),
     function(err) analyse(d, m, err, e$z)))))
-  cbind(key[rep(1, nrow(out)), ], out, z = e$z, a_true = p0[["a"]], h_true = p0[["h"]], k = e$k,
+  cbind(key[rep(1, nrow(out)), ], out,
+        process = if (e$generating_model == "predator") "predator" else "parasitoid", z = e$z, a_true = p0[["a"]], h_true = p0[["h"]], k = e$k,
         s_over_h = e$s_over_h, h_over_T = e$h_over_T, E = e$E, design = e$design, n_trials = nrow(d),
         row.names = NULL)
 }
@@ -237,9 +249,17 @@ M1 <- M1[M1$arm %in% c("core_exploratory", "dense_design"), ]
 M2 <- utils::read.csv(file.path(DIR_TAB, "extended_range_fits.csv"), stringsAsFactors = FALSE)
 cols <- c("scenario", "dataset", "z_hat", "a_hat", "h_hat", "k_hat", "z_low", "z_high", "low_open",
           "high_open", "covers", "excludes_1", "nll_precise_hat")
-M <- rbind(M1[, cols], M2[, cols])
-M$source <- ifelse(M$scenario %in% M2$scenario, "extended_range", ifelse(grepl("_dense$", M$scenario), "dense", "core"))
-M <- merge(M, unique(R[, c("source", "scenario", "dataset", "z", "a_true", "h_true", "k", "s_over_h",
+M1$source <- ifelse(grepl("_dense$", M1$scenario), "dense", "core")
+M2$source <- "extended_range"
+M <- rbind(M1[, c("source", cols)], M2[, c("source", cols)])
+for (st in STUDIES) {
+  f <- file.path(DIR_TAB, paste0(st, "_fits", if (QUICK) "_quick", ".csv"))
+  if (file.exists(f)) {
+    M3 <- utils::read.csv(f, stringsAsFactors = FALSE); M3$source <- st
+    M <- rbind(M, M3[, c("source", cols)])
+  }
+}
+M <- merge(M, unique(R[, c("source", "scenario", "dataset", "process", "z", "a_true", "h_true", "k", "s_over_h",
                            "h_over_T", "E", "design", "n_trials")]))
 M$mean <- "mechanistic"; M$error <- "simulation"; M$rho_hat <- NA_real_
 M$objective <- M$nll_precise_hat; M$nll <- M$nll_precise_hat; M$n_par <- 5L; M$p_z1 <- NA_real_
@@ -251,6 +271,10 @@ A$h_ratio <- A$h_hat / A$h_true
 A$a_ratio <- A$a_hat / A$a_true
 A$open <- A$low_open | A$high_open
 A$AIC <- ifelse(is.na(A$nll), NA_real_, 2 * A$nll + 2 * A$n_par)
+# conclusion about the type: z > 1 (type III), z < 1, or z = 1 not rejected (type II)
+A$type_hat <- ifelse(A$excludes_1, ifelse(A$z_hat > 1, "above 1", "below 1"), "1")
+A$type_true <- ifelse(A$z > 1, "above 1", ifelse(A$z < 1, "below 1", "1"))
+A$correct_type <- A$type_hat == A$type_true
 utils::write.csv(A, file.path(DIR_TAB, paste0("conventional_fits", SUFFIX, ".csv")), row.names = FALSE)
 
 # ---- summaries ----------------------------------------------------------------------
@@ -259,13 +283,15 @@ summ <- function(g) {
   data.frame(n = nrow(g), coverage = w[["p"]], coverage_low = w[["lower"]], coverage_high = w[["upper"]],
              type_I_error = if (any(g$z == 1)) mean(g$excludes_1[g$z == 1]) else NA_real_,
              power = if (any(g$z > 1)) mean(g$excludes_1[g$z > 1]) else NA_real_,
+             detects_z_below_1 = if (any(g$z < 1)) mean(g$excludes_1[g$z < 1]) else NA_real_,
+             correct_type = mean(g$correct_type),
              median_z_error = stats::median(g$z_error), rmse_log_z = sqrt(mean(log(g$z_hat / g$z)^2)),
              median_h_ratio = stats::median(g$h_ratio), open_interval = mean(g$open))
 }
-groups <- list(all = rep("all", nrow(A)), k = paste0("k = ", A$k),
-               block = ifelse(A$source == "extended_range",
-                              ifelse(A$s_over_h != 0.5, "s/h = 1.5", ifelse(A$h_over_T != 0.025, "h/T = 0.1", "E = 5")),
-                              paste("base,", A$design)))
+blk <- ifelse(A$s_over_h != 0.5, "s/h = 1.5", ifelse(A$h_over_T != 0.025, "h/T = 0.1",
+              ifelse(A$E != 20, "E = 5", paste("base,", A$design))))
+groups <- list(all = A$process, k = paste0(A$process, ", k = ", A$k), z = paste0(A$process, ", z = ", A$z),
+               block = paste0(A$process, ", ", blk))
 S <- do.call(rbind, lapply(names(groups), function(gn) {
   sp <- split(A, list(A$method, groups[[gn]]), drop = TRUE)
   do.call(rbind, lapply(sp, function(g) cbind(grouping = gn, level = groups[[gn]][match(rownames(g)[1], rownames(A))],
@@ -273,5 +299,5 @@ S <- do.call(rbind, lapply(names(groups), function(gn) {
 }))
 rownames(S) <- NULL
 utils::write.csv(S, file.path(DIR_TAB, paste0("conventional_summary", SUFFIX, ".csv")), row.names = FALSE)
-print(S[S$grouping == "all", c("method", "n", "coverage", "type_I_error", "power", "median_z_error",
+print(S[S$grouping == "all", c("level", "method", "n", "coverage", "type_I_error", "power", "median_z_error",
                                 "rmse_log_z", "median_h_ratio", "open_interval")], digits = 3)

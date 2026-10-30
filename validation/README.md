@@ -21,6 +21,7 @@ is excluded from the package tarball through `.Rbuildignore`).
 | `R/19_phenomenological_data.R` | Fits to data drawn from binomial and beta-binomial distributions around a fixed mean functional response; 48 fits | (pending) |
 | `R/21_worked_example_D3.R` | Worked example: complete analysis of D3, saving every printed output and the figures to `worked_example/` | (pending) |
 | `R/22_conventional_methods.R` | Binomial, beta-binomial and least-squares fits (Holling, Rogers and Okuyama means, as in frair and Okuyama 2026) to the 432 datasets of the simulation study, compared with the simulation-based fits | (pending) |
+| `R/23_new_scenarios.R` | New simulation studies: parasitoid with z = 0.5 (144 fits) and predator process (384 fits); set `STUDY` first | (pending) |
 | `R/20_figures_and_tables.R` | Figures 1 to 3, S1 and S2 Figs, and the summary tables | all |
 | `R/helpers.R` | Shared definitions: designs, scenarios, simulation of datasets, seeds | |
 
@@ -46,7 +47,9 @@ source("validation/R/16_simulation_study_analysis.R")
 rm(list = ls()); source("validation/R/18_extended_range.R")      # complete run (about 9 h on 23 cores)
 rm(list = ls()); source("validation/R/19_phenomenological_data.R")  # complete run (about 2 to 3 h on 23 cores)
 rm(list = ls()); source("validation/R/21_worked_example_D3.R")    # complete run (a few hours)
-rm(list = ls()); source("validation/R/22_conventional_methods.R") # about 1 h on one core
+rm(list = ls()); STUDY <- "parasitoid_z05"; source("validation/R/23_new_scenarios.R")  # about 6 h on 23 cores
+rm(list = ls()); STUDY <- "predator"; source("validation/R/23_new_scenarios.R")        # about 15 h on 23 cores
+rm(list = ls()); source("validation/R/22_conventional_methods.R") # conventional fits of all simulated datasets
 source("validation/R/20_figures_and_tables.R")
 ```
 
