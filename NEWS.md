@@ -1,4 +1,4 @@
-# funresMech 1.1.0.9000
+# funresMech 1.1.0.9001
 
 Development version of the forthcoming release 1.2.0, available on the GitHub
 branch `dev-frMech-1.1.0.9000`. It has not been submitted to CRAN or archived

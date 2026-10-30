@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 <!-- badges: end -->
 
-> **Development version (1.1.0.9000).** This branch contains the development
+> **Development version (1.1.0.9001).** This branch contains the development
 > version of the forthcoming release 1.2.0. It has not been submitted to CRAN
 > or archived in Zenodo; the current release on CRAN is 1.1.0.
 
@@ -132,7 +132,7 @@ citation("funresMech")
 Please cite the package and the method:
 
 * Núñez-Campero S. funresMech: mechanistic functional response analysis
-  with simulation-based likelihood. R package version 1.1.0.9000
+  with simulation-based likelihood. R package version 1.1.0.9001
   (development version of 1.2.0).
   doi: 10.32614/CRAN.package.funresMech
 * Okuyama T (2012). A likelihood approach for functional response models.

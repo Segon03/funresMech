@@ -1,6 +1,6 @@
 Package: funresMech
 Title: Mechanistic Functional Response Analysis with Simulation-Based Likelihood
-Version: 1.1.0.9000
+Version: 1.1.0.9001
 Authors@R: 
     person('Segundo', 'Núñez-Campero', 
            email = 'segundo.nc@conicet.gov.ar', 
