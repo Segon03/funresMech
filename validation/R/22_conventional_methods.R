@@ -241,7 +241,13 @@ if (length(pending)) {
   cat(sprintf("Conventional fits of %d datasets in %.1f min\n", length(pending),
               as.numeric(difftime(Sys.time(), t0, units = "mins"))))
 }
-R <- do.call(rbind, lapply(vapply(seq_len(nrow(keys)), res_file, ""), function(f) if (file.exists(f)) readRDS(f)))
+# files written before the predator study have no process column (all parasitoid)
+read_res <- function(f) {
+  r <- readRDS(f)
+  if (!"process" %in% names(r)) r$process <- "parasitoid"
+  r
+}
+R <- do.call(rbind, lapply(vapply(seq_len(nrow(keys)), res_file, ""), function(f) if (file.exists(f)) read_res(f)))
 
 # ---- merge with the simulation-based fits of the same datasets ----------------------
 M1 <- utils::read.csv(file.path(DIR_TAB, "simulation_study_fits.csv"), stringsAsFactors = FALSE)
