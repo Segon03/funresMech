@@ -1,0 +1,82 @@
+"process","method","term","odds_ratio","p_value"
+"parasitoid","Mechanistic","(Intercept)",3.8967276818612,0.00155626252217729
+"parasitoid","Mechanistic","factor(k)1",3.64599273605599,0.000430066535490359
+"parasitoid","Mechanistic","factor(k)5",2.12287155772806,0.0171334758644205
+"parasitoid","Mechanistic","factor(z)1",1.75883676259302,0.139373659537587
+"parasitoid","Mechanistic","factor(z)1.75",1.06143906033999,0.86293782472075
+"parasitoid","Mechanistic","factor(z)2.75",2.64753546737152,0.0217571150574855
+"parasitoid","Mechanistic","blockbase",1.09159756035216,0.832872835717298
+"parasitoid","Mechanistic","blockh/T = 0.1",0.592262732391315,0.25909973617001
+"parasitoid","Mechanistic","blocks/h = 1.5",0.543564204600408,0.184327699841834
+"predator","Mechanistic","(Intercept)",9.5291070725125,4.7631048004565e-05
+"predator","Mechanistic","factor(k)1",1.700792836555,0.257695102308369
+"predator","Mechanistic","factor(k)5",1.33634388063312,0.511786724651214
+"predator","Mechanistic","factor(z)1",1,0.999999999999996
+"predator","Mechanistic","factor(z)1.75",1.15732655522004,0.787218220867643
+"predator","Mechanistic","factor(z)2.75",1.00000000000001,0.999999999999991
+"predator","Mechanistic","blockbase",1.43299296446848,0.552134097668243
+"predator","Mechanistic","blockh/T = 0.1",0.759486493414157,0.601672394626592
+"predator","Mechanistic","blocks/h = 1.5",0.675319636977633,0.44724161117778
+"parasitoid","Correct curve + BB","(Intercept)",1.03280705020777,0.927557728728306
+"parasitoid","Correct curve + BB","factor(k)1",9.37346525074051,8.07153718162566e-12
+"parasitoid","Correct curve + BB","factor(k)5",6.2450833247984,3.67461885839892e-10
+"parasitoid","Correct curve + BB","factor(z)1",4.20980171885443,0.000699055971909739
+"parasitoid","Correct curve + BB","factor(z)1.75",1.1136502006343,0.742938583596986
+"parasitoid","Correct curve + BB","factor(z)2.75",0.461477925248893,0.0118107124028657
+"parasitoid","Correct curve + BB","blockbase",1.34045827066714,0.363851846800993
+"parasitoid","Correct curve + BB","blockh/T = 0.1",1.64750738286401,0.224182570821103
+"parasitoid","Correct curve + BB","blocks/h = 1.5",1.81080925781701,0.153441279254932
+"predator","Correct curve + BB","(Intercept)",2.94587146545787,0.0162623045542832
+"predator","Correct curve + BB","factor(k)1",14.7736653162075,5.91734280740602e-11
+"predator","Correct curve + BB","factor(k)5",30.6871379599805,2.64302409210692e-13
+"predator","Correct curve + BB","factor(z)1",1.43896711321028,0.461586381403925
+"predator","Correct curve + BB","factor(z)1.75",0.409601315739085,0.0495867147953879
+"predator","Correct curve + BB","factor(z)2.75",0.0318334666409201,3.96008476466503e-12
+"predator","Correct curve + BB","blockbase",0.197456406398679,0.000205383866354097
+"predator","Correct curve + BB","blockh/T = 0.1",1.74695023686699,0.241468211987077
+"predator","Correct curve + BB","blocks/h = 1.5",0.318602199138452,0.0080637758468736
+"parasitoid","Correct curve + binomial","(Intercept)",3.20414908176769,0.0160314536220574
+"parasitoid","Correct curve + binomial","factor(k)1",34.1060868898042,4.84593749299991e-12
+"parasitoid","Correct curve + binomial","factor(k)5",10.7847672913689,2.87661290406664e-11
+"parasitoid","Correct curve + binomial","factor(z)1",0.855866441465228,0.780548148638313
+"parasitoid","Correct curve + binomial","factor(z)1.75",0.161338969550146,0.000149343185856532
+"parasitoid","Correct curve + binomial","factor(z)2.75",0.059616020757357,4.80892824981038e-09
+"parasitoid","Correct curve + binomial","blockbase",2.17592928733743,0.0357971617131061
+"parasitoid","Correct curve + binomial","blockh/T = 0.1",4.10657578646406,0.00537209454181884
+"parasitoid","Correct curve + binomial","blocks/h = 1.5",3.5344308594806,0.0110020750541419
+"predator","Correct curve + binomial","(Intercept)",3.40629772701215,0.00967910342976237
+"predator","Correct curve + binomial","factor(k)1",22.1341094857638,7.6437683658351e-12
+"predator","Correct curve + binomial","factor(k)5",68.0647457988611,1.00543509871218e-14
+"predator","Correct curve + binomial","factor(z)1",0.769052627235082,0.6089360592986
+"predator","Correct curve + binomial","factor(z)1.75",0.207986247674852,0.00172055791406683
+"predator","Correct curve + binomial","factor(z)2.75",0.0143059365145614,2.60470474038793e-13
+"predator","Correct curve + binomial","blockbase",0.24996487244113,0.00193873019242785
+"predator","Correct curve + binomial","blockh/T = 0.1",2.27896962832907,0.0951173368487627
+"predator","Correct curve + binomial","blocks/h = 1.5",0.325539090651217,0.0114864438933318
+"parasitoid","Correct curve + LS","(Intercept)",25.5096265247152,5.49535225428051e-05
+"parasitoid","Correct curve + LS","factor(k)1",2.68864422503703,0.0477747734895062
+"parasitoid","Correct curve + LS","factor(k)5",1.98460360118563,0.132872770711922
+"parasitoid","Correct curve + LS","factor(z)1",0.388882021581624,0.265283431926352
+"parasitoid","Correct curve + LS","factor(z)1.75",0.151495645546808,0.01506584438545
+"parasitoid","Correct curve + LS","factor(z)2.75",0.185363123221027,0.0322044094396807
+"parasitoid","Correct curve + LS","blockbase",1.96616283210947,0.154188241057924
+"parasitoid","Correct curve + LS","blockh/T = 0.1",2.90451682926663,0.128776574820383
+"parasitoid","Correct curve + LS","blocks/h = 1.5",1.68483382585099,0.384298612568148
+"predator","Correct curve + LS","(Intercept)",236164281.414782,0.985005432532766
+"predator","Correct curve + LS","factor(k)1",1.22439712724582,0.653169143051707
+"predator","Correct curve + LS","factor(k)5",1.36038931921712,0.498143218996236
+"predator","Correct curve + LS","factor(z)1",5.27610919365125e-08,0.986967092369995
+"predator","Correct curve + LS","factor(z)1.75",1.95961071957988e-08,0.986196863047026
+"predator","Correct curve + LS","factor(z)2.75",5.5623032982079e-10,0.983427022051344
+"predator","Correct curve + LS","blockbase",0.476051677450474,0.142184967843455
+"predator","Correct curve + LS","blockh/T = 0.1",13.9748111073677,1.54223021730385e-05
+"predator","Correct curve + LS","blocks/h = 1.5",1.1470968139366,0.793490071360095
+"parasitoid","frair default (Rogers + BB)","(Intercept)",2.73656588889659,0.0147857583664837
+"parasitoid","frair default (Rogers + BB)","factor(k)1",9.99594134504959,1.50859276747288e-13
+"parasitoid","frair default (Rogers + BB)","factor(k)5",21.9824228254964,1.61404313435295e-16
+"parasitoid","frair default (Rogers + BB)","factor(z)1",1,0.999999999999994
+"parasitoid","frair default (Rogers + BB)","factor(z)1.75",0.204828624632549,4.99886999336597e-05
+"parasitoid","frair default (Rogers + BB)","factor(z)2.75",0.0706863027861059,2.92771378735067e-11
+"parasitoid","frair default (Rogers + BB)","blockbase",1.16014467718956,0.664889030728249
+"parasitoid","frair default (Rogers + BB)","blockh/T = 0.1",2.80788377735036,0.0265389516684009
+"parasitoid","frair default (Rogers + BB)","blocks/h = 1.5",1,0.999999999999996

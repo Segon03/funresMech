@@ -188,7 +188,7 @@ if (length(OB)) {
                             z_hat = par[["z"]], z_low = ci$z_low, z_high = ci$z_high,
                             low_open = ci$low_censored, high_open = ci$high_censored,
                             covers = (is.na(ci$z_low) || ci$z_low <= e$z) && (is.na(ci$z_high) || e$z <= ci$z_high),
-                            excludes_1 = !is.na(ci$z_low) && ci$z_low > 1,
+                            excludes_1 = (!is.na(ci$z_low) && ci$z_low > 1) || (!is.na(ci$z_high) && ci$z_high < 1),
                             nll_precise_hat = precise_nll(par, funres_model(), d),
                             nll_precise_true = oo[[1]]$res$nll_precise_true,
                             seconds = sum(vapply(oo, function(o) o$seconds, 0)),

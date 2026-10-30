@@ -117,7 +117,7 @@ run_one <- function(job) {
                       strategy = job$strategy, run = 1, z_hat = f$par[["z"]], z_low = ci$z_low, z_high = ci$z_high,
                       covers = (is.na(ci$z_low) || ci$z_low <= e$z) && (is.na(ci$z_high) || e$z <= ci$z_high),
                       open = ci$low_censored || ci$high_censored,
-                      excludes_1 = !is.na(ci$z_low) && ci$z_low > 1,
+                      excludes_1 = (!is.na(ci$z_low) && ci$z_low > 1) || (!is.na(ci$z_high) && ci$z_high < 1),
                       n_points = nrow(f$profile), reliability = attr(reliability(f), "overall"), seconds = sec)
   }
   saveRDS(out, job$file)
